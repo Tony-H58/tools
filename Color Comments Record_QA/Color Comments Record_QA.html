@@ -1,0 +1,2680 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Comments Record_QA</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+    <style>
+        /* 主題色調定義 */
+        :root {
+            --primary-color: #667eea;
+            --primary-light: #e8eef9;
+            --primary-border: #667eea;
+            --input-bg: #fffacd;
+            --button-hover: #5568d3;
+        }
+
+        /* 淺藍主題 */
+        body.theme-blue {
+            --primary-color: #4a90e2;
+            --primary-light: #e3f2fd;
+            --primary-border: #4a90e2;
+            --input-bg: #e3f2fd;
+            --button-hover: #357abd;
+        }
+
+        /* 淺綠主題 */
+        body.theme-green {
+            --primary-color: #52c41a;
+            --primary-light: #f6ffed;
+            --primary-border: #52c41a;
+            --input-bg: #f6ffed;
+            --button-hover: #45a311;
+        }
+
+        /* 淺粉主題 */
+        body.theme-pink {
+            --primary-color: #d946a6;
+            --primary-light: #fdf2f8;
+            --primary-border: #d946a6;
+            --input-bg: #fdf2f8;
+            --button-hover: #c21e89;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* 主題切換按鈕 */
+        .theme-switcher {
+            display: flex;
+            gap: 8px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .theme-btn.blue { background: #e3f2fd; color: #4a90e2; }
+        .theme-btn.green { background: #f6ffed; color: #52c41a; }
+        .theme-btn.pink { background: #fdf2f8; color: #d946a6; }
+
+        .theme-btn.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(0,0,0,0.2);
+            transform: scale(1.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--primary-border);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .form-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        .date-range-group {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            max-width: 50%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        label .required {
+            color: #e74c3c;
+            margin-left: 3px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="datetime-local"],
+        input[type="number"],
+        select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            background-color: var(--input-bg);
+            height: 40px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            background-color: #fffacd;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        input[type="datetime-local"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .search-buttons, .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-search {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 40px;
+        }
+
+        .btn-search:hover {
+            background: var(--button-hover);
+        }
+
+        .btn-clear {
+            background: #e0e0e0;
+            color: #666;
+            padding: 12px 40px;
+        }
+
+        .btn-clear:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-submit {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 40px;
+        }
+
+        .btn-submit:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-reset {
+            background: #f5f5f5;
+            color: #666;
+            padding: 12px 40px;
+        }
+
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+
+        /* 查詢結果表格 */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .results-table thead {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .results-table th {
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .results-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .results-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .sample-stat {
+            display: inline-block;
+            background: #ffffcc;
+            border: 1px solid #ffeb3b;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 4px;
+            font-size: 12px;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-load, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-load {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #229954;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+
+        .results-count {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .search-results {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #0097bc;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0097bc;
+            margin-bottom: 15px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        /* 頁籤樣式 */
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0;
+            flex-wrap: wrap;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            padding: 15px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: #f5f5f5;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: #efefef;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tabs-content {
+            display: none;
+        }
+
+        .tabs-content.active {
+            display: block;
+        }
+
+        /* 下拉選單管理卡片 */
+        /* 下拉選單表格 */
+        .dropdown-manager {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .dropdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .dropdown-table thead {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .dropdown-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .dropdown-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .dropdown-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .cell-content {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .dropdown-table input[type="text"] {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 6px;
+            border-radius: 4px;
+            background-color: var(--input-bg) !important;
+        }
+
+        .dropdown-table input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+        }
+
+        .btn-cell-delete {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-cell-delete:hover {
+            background: #c0392b;
+        }
+
+        .dropdown-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-dropdown-add {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-dropdown-add:hover {
+            background: #229954;
+        }
+
+        .btn-dropdown-save {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-dropdown-save:hover {
+            background: #5568d3;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .date-range-group {
+                grid-column: span 1;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="theme-blue">
+    <div class="container">
+        <!-- 頁頭 -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>🎨 核色記錄系統</h1>
+                    <p>Color Comments Record - QA</p>
+                </div>
+                <!-- 主題切換 -->
+                <div class="theme-switcher">
+                    <button class="theme-btn blue active" data-theme="blue" title="淺藍主題"></button>
+                    <button class="theme-btn green" data-theme="green" title="淺綠主題"></button>
+                    <button class="theme-btn pink" data-theme="pink" title="淺粉主題"></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- 頁籤導航 -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="main-tab">📋 查詢與編輯</button>
+                <button class="tab-btn" data-tab="dropdown-tab">⚙️ 下拉選單管理</button>
+            </div>
+        </div>
+
+        <!-- 頁籤 1: 查詢與編輯 -->
+        <div id="main-tab" class="tabs-content active">
+        <!-- 選擇檔案區 -->
+        <div class="section">
+            <div class="section-header">📁 選擇目標工作簿</div>
+            <div style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px;">
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <button type="button" id="btnFileImport" style="background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; white-space: nowrap;">選擇工作簿</button>
+                    <div id="fileImportStatus" style="flex: 1; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 14px; color: #666;">尚未選擇目標工作簿</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查詢區 -->
+        <div class="section">
+            <div class="section-header">📋 查詢現有記錄</div>
+
+            <div class="form-grid">
+                <div class="date-range-group">
+                    <div class="form-group">
+                        <label>出件日開始</label>
+                        <input type="date" id="searchDateFrom">
+                    </div>
+                    <div class="form-group">
+                        <label>出件日結束</label>
+                        <input type="date" id="searchDateTo">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>客戶</label>
+                    <input type="text" id="searchCustomer" list="searchCustomerList" placeholder="選擇或輸入客戶">
+                    <datalist id="searchCustomerList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>Style No</label>
+                    <input type="text" id="searchStyleNo" placeholder="例: AW-0900-SP26">
+                </div>
+                <div class="form-group">
+                    <label>供應商</label>
+                    <input type="text" id="searchSupplier" list="searchSupplierList" placeholder="選擇或輸入供應商">
+                    <datalist id="searchSupplierList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>顏色/花版</label>
+                    <input type="text" id="searchColor" placeholder="例: TEAM RED">
+                </div>
+            </div>
+
+            <div class="search-buttons">
+                <button class="btn-search" id="btnSearch">🔍 查詢</button>
+                <button class="btn-clear" id="btnClearSearch">✕ 清空查詢</button>
+            </div>
+
+            <!-- 查詢結果 -->
+            <div id="searchResults" class="search-results">
+                <div class="results-count" id="resultsCount"></div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>客戶</th>
+                            <th>Style No</th>
+                            <th>供應商</th>
+                            <th>品名</th>
+                            <th>染法</th>
+                            <th>顏色/花版</th>
+                            <th>樣品類別統計</th>
+                        </tr>
+                    </thead>
+                    <tbody id="searchResultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 編輯區 -->
+        <div class="section">
+            <div class="section-header">✏️ 新增/編輯記錄</div>
+
+            <form id="colorQAForm">
+                <!-- 提示訊息 -->
+                <div id="formAlert" class="alert" style="display: none; margin-bottom: 15px; cursor: pointer;"></div>
+
+                <!-- 日期 -->
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>收件日</label>
+                            <input type="datetime-local" name="receiveDate">
+                        </div>
+                        <div class="form-group">
+                            <label>出件日</label>
+                            <input type="datetime-local" name="shipDate">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>客戶 <span class="required">*</span></label>
+                            <input type="text" name="customer" id="editCustomer" list="customerList" required placeholder="選擇或輸入客戶">
+                            <datalist id="customerList"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>申請人 <span class="required">*</span></label>
+                            <input type="text" name="applicant" id="editApplicant" list="applicantList" required placeholder="選擇或輸入申請人">
+                            <datalist id="applicantList"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>Style No <span class="required">*</span></label>
+                            <input type="text" name="styleNo" required placeholder="例: AW-0900-SP26">
+                        </div>
+                        <div class="form-group">
+                            <label>供應商 <span class="required">*</span></label>
+                            <input type="text" name="supplier" id="editSupplier" list="supplierList" required placeholder="選擇或輸入供應商">
+                            <datalist id="supplierList"></datalist>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 產品信息 -->
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>品項 <span class="required">*</span></label>
+                            <select name="category" id="editCategory" required>
+                                <option value="">-- 請選擇 --</option>
+                                <option value="KNIT">KNIT</option>
+                                <option value="WOVEN">WOVEN</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>布種/品名 <span class="required">*</span></label>
+                            <input type="text" name="productName" id="productName" list="productNameList" required placeholder="選擇或輸入布種">
+                            <datalist id="productNameList"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>染法 <span class="required">*</span></label>
+                            <select name="dyeMethod" id="editDyeMethod" required>
+                                <option value="">-- 選擇 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>顏色/花版 <span class="required">*</span></label>
+                            <input type="text" name="color" required placeholder="例: TEAM RED 104-850">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 樣品信息 -->
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>樣品類別 <span class="required">*</span></label>
+                            <select name="sampleType" required>
+                                <option value="">-- 請選擇 --</option>
+                                <option value="L/S/H">L/S/H</option>
+                                <option value="1ST LOT">1ST LOT</option>
+                                <option value="OTHERS">OTHERS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>樣品數</label>
+                            <input type="number" name="sampleQty" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>樣品編號</label>
+                            <input type="text" name="sampleNo" placeholder="例: 1ST#7385">
+                        </div>
+                        <div class="form-group">
+                            <label>序號</label>
+                            <input type="text" name="seqNo" placeholder="例: B01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 核色類別與核色人員 -->
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>核色類別</label>
+                            <select name="qaCategory" id="editQACategory">
+                                <option value="">選擇核色類別</option>
+                                <option value="DIGITAL">DIGITAL</option>
+                                <option value="VISUAL">VISUAL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>核色人員 <span class="required">*</span></label>
+                            <input type="text" name="qaName" id="editQAName" list="qaNameList" required placeholder="選擇或輸入核色人員">
+                            <datalist id="qaNameList"></datalist>
+                        </div>
+                        <div class="form-group" style="display: none;">
+                            <label>核色進度</label>
+                            <select name="mkProgress">
+                                <option value="">-- 請選擇 --</option>
+                                <option value="PASS by MK">PASS by MK</option>
+                                <option value="FAIL by MK">FAIL by MK</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>結論</label>
+                            <select name="conclusion">
+                                <option value="">-- 請選擇 --</option>
+                                <option value="PASS">PASS</option>
+                                <option value="BCD">BCD</option>
+                                <option value="FAIL">FAIL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>CQ上傳日期</label>
+                            <input type="datetime-local" name="cqUploadDate">
+                        </div>
+                    </div>
+                    <div class="form-grid full">
+                        <div class="form-group">
+                            <label>評語/備註</label>
+                            <input type="text" name="remarks" id="editRemarks" list="remarksList" placeholder="選擇或輸入評語/備註">
+                            <datalist id="remarksList"></datalist>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 按鈕 -->
+                <div class="button-group">
+                    <button type="submit" class="btn-submit" id="btn-add" style="display: none;">💾 保存記錄</button>
+                    <button type="submit" class="btn-submit" id="btn-edit" style="display: none;">💾 保存記錄</button>
+                    <button type="reset" class="btn-reset">🔄 清空記錄</button>
+                </div>
+            </form>
+        </div>
+        </div>
+
+        <!-- 頁籤 2: 下拉選單管理 -->
+        <div id="dropdown-tab" class="tabs-content">
+            <div class="section">
+                <div class="section-header">⚙️ 下拉選單管理</div>
+                <p style="color: #666; margin-bottom: 20px;">💡 修改會自動儲存</p>
+                <div class="dropdown-manager">
+                    <table class="dropdown-table" id="dropdownTable">
+                        <thead>
+                            <tr id="tableHead"></tr>
+                        </thead>
+                        <tbody id="dropdownTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="dropdown-actions">
+                    <button type="button" class="btn-dropdown-add" onclick="addDropdownRow()">➕ 新增一行</button>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+    <script>
+        // ========== 主題切換功能 ==========
+        const themeSwitcher = document.querySelector('.theme-switcher');
+        const themeButtons = document.querySelectorAll('.theme-btn');
+
+        // 初始化主題
+        const savedTheme = localStorage.getItem('selectedTheme') || 'blue';
+        document.body.className = `theme-${savedTheme}`;
+        updateThemeButtons(savedTheme);
+
+        function updateThemeButtons(theme) {
+            themeButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.theme === theme) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const theme = e.target.dataset.theme;
+                document.body.className = `theme-${theme}`;
+                localStorage.setItem('selectedTheme', theme);
+                updateThemeButtons(theme);
+                console.log(`🎨 切換到${theme === 'blue' ? '淺藍' : theme === 'green' ? '淺綠' : '淺粉'}主題`);
+            });
+        });
+
+        // ========== File System Access API 選擇（Chrome/Edge）==========
+        let EXCEL_FILE_HANDLE = null;
+        let EXCEL_DATA_CACHE = [];
+
+        async function selectFile() {
+            // 優先用 File System Access API
+            if (window.showOpenFilePicker) {
+                await selectFileWithFSA();
+            } else {
+                selectFileWithInput();
+            }
+        }
+
+        async function selectFileWithFSA() {
+            try {
+                // 用戶選擇檔案
+                const [newHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Excel 檔案',
+                        accept: {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']}
+                    }]
+                });
+
+                EXCEL_FILE_HANDLE = newHandle;
+                const file = await newHandle.getFile();
+
+                // 檢測是否為同一檔案（比對大小和修改時間）
+                const lastFileSize = localStorage.getItem('lastFileSize');
+                const lastFileModTime = localStorage.getItem('lastFileModTime');
+                const lastFileName = localStorage.getItem('lastFileName');
+
+                let fileStatus = '';
+                if (lastFileName === file.name && lastFileSize === file.size.toString() && lastFileModTime === file.lastModified.toString()) {
+                    fileStatus = '（同上次使用的檔案，未改動）';
+                    console.log('✅ 檢測到同一檔案（大小和修改時間相同）');
+                } else if (lastFileName && lastFileName !== file.name) {
+                    console.log('⚠️ 警告：已改用不同的檔案', file.name);
+                } else if (lastFileName === file.name && (lastFileSize !== file.size.toString() || lastFileModTime !== file.lastModified.toString())) {
+                    fileStatus = '（同名檔案但內容已改動）';
+                    console.log('⚠️ 警告：檔案已改動（大小或修改時間不同）');
+                }
+
+                // 保存檔案信息到 localStorage（方便下次快速定位）
+                localStorage.setItem('lastFileName', file.name);
+                localStorage.setItem('lastFileSize', file.size);
+                localStorage.setItem('lastFileModTime', file.lastModified);
+                console.log('💾 已保存檔案信息到 localStorage:', file.name, `大小: ${file.size}, 修改時間: ${file.lastModified}`, fileStatus);
+
+                await loadExcelFromHandle(newHandle, file);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('檔案選擇失敗:', error);
+                    showAlert('❌ 選擇檔案失敗: ' + error.message, 'error');
+                }
+            }
+        }
+
+        async function loadExcelFromHandle(handle, file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                EXCEL_DATA_CACHE = XLSX.utils.sheet_to_json(firstSheet);
+
+                // 保存記錄數到 localStorage
+                localStorage.setItem('lastRecordCount', EXCEL_DATA_CACHE.length);
+
+                const statusDiv = document.getElementById('fileImportStatus');
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<span style="color: #27ae60; font-weight: bold;">✅ ${file.name}</span><br/><small style="color: #999;">共 ${EXCEL_DATA_CACHE.length} 筆記錄</small>`;
+                }
+
+                console.log('✅ 已讀取 Excel，共', EXCEL_DATA_CACHE.length, '筆記錄');
+                showAlert(`✅ 已載入 ${EXCEL_DATA_CACHE.length} 筆記錄`, 'success');
+            } catch (error) {
+                console.error('Excel 讀取失敗:', error);
+                showAlert('❌ 讀取失敗: ' + error.message, 'error');
+            }
+        }
+
+        function selectFileWithInput() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls,.csv,.txt';
+
+            input.onchange = (e) => {
+                const files = e.target.files;
+                const statusDiv = document.getElementById('fileImportStatus');
+
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    const fileName = file.name.toLowerCase();
+                    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+                    // 儲存檔案路徑到 localStorage（用於保存時知道要存到哪個 Excel 檔案）
+                    // 注：由於瀏覽器安全限制，無法直接取得完整路徑，需要用戶手動指定
+                    localStorage.setItem('selectedFileName', file.name);
+                    console.log('📁 選擇的檔案名稱:', file.name);
+
+                    if (isExcel) {
+                        // Excel 檔案：用 XLSX 庫讀取（表頭在第 1 行）
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const data = event.target.result;
+                                const workbook = XLSX.read(data, { type: 'binary' });
+                                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                                const excelData = XLSX.utils.sheet_to_json(firstSheet);
+
+                                if (excelData && excelData.length > 0) {
+                                    const headers = Object.keys(excelData[0]);
+                                    showHeaderConfirmation(file.name, headers, excelData);
+                                } else {
+                                    throw new Error('檔案內容為空');
+                                }
+                            } catch (error) {
+                                console.error('Excel 讀取失敗:', error);
+                                if (statusDiv) {
+                                    statusDiv.innerHTML = `<span style="color: #e74c3c;">❌ 檔案讀取失敗</span><br/><small style="color: #999;">${error.message}</small>`;
+                                }
+                            }
+                        };
+                        reader.onerror = () => {
+                            if (statusDiv) {
+                                statusDiv.innerHTML = `<span style="color: #e74c3c;">❌ 檔案讀取出錯</span>`;
+                            }
+                        };
+                        reader.readAsBinaryString(file);
+                    } else {
+                        // CSV 檔案：用文字讀取
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const text = event.target.result;
+                                const lines = text.trim().split('\n');
+
+                                if (lines.length < 2) {
+                                    throw new Error('檔案內容不足');
+                                }
+
+                                // 自動偵測標題行
+                                let headerLineIndex = 0;
+                                const expectedHeaders = ['客戶', 'Style No', '供應商', '顏色', '品名'];
+
+                                for (let i = 0; i < Math.min(3, lines.length); i++) {
+                                    const lineHeaders = lines[i].split(',').map(h => h.trim());
+                                    const matchCount = expectedHeaders.filter(h =>
+                                        lineHeaders.some(lh => lh.includes(h))
+                                    ).length;
+                                    if (matchCount >= 2) {
+                                        headerLineIndex = i;
+                                        break;
+                                    }
+                                }
+
+                                const headers = lines[headerLineIndex].split(',').map(h => h.trim());
+
+                                // 顯示表頭確認面板
+                                showHeaderConfirmation(file.name, headers, null, { text, lines, headerLineIndex });
+                            } catch (error) {
+                                console.error('CSV 讀取失敗:', error);
+                                if (statusDiv) {
+                                    statusDiv.innerHTML = `<span style="color: #e74c3c;">❌ 檔案讀取失敗</span><br/><small style="color: #999;">${error.message}</small>`;
+                                }
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                }
+            };
+
+            input.click();
+        }
+
+        function showHeaderConfirmation(fileName, headers, excelData, csvInfo) {
+            const statusDiv = document.getElementById('fileImportStatus');
+
+            // 定義必要欄位
+            const requiredFields = ['客戶', 'Style No', '供應商', '顏色/花版'];
+
+            // 檢查表頭是否包含所有必要欄位
+            const missingFields = requiredFields.filter(field => !headers.includes(field));
+
+            if (missingFields.length > 0) {
+                // 表頭不完整 - 警告用戶
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<span style="color: #e74c3c;">⚠️ 檔案表頭不符合預期</span><br/><small style="color: #999;">缺少欄位：${missingFields.join(', ')}</small>`;
+                }
+                console.warn('❌ 表頭檢查失敗，缺少欄位:', missingFields);
+                return;
+            }
+
+            // 表頭正確 - 直接匯入
+            console.log('✅ 表頭檢查通過，開始匯入...');
+            console.log('📋 表頭:', headers);
+
+            localExcelData = [];
+
+            if (excelData) {
+                // Excel 資料已是物件陣列
+                localExcelData = excelData;
+            } else if (csvInfo) {
+                // CSV 需要手動解析
+                const { text, lines, headerLineIndex } = csvInfo;
+                for (let i = headerLineIndex + 1; i < lines.length; i++) {
+                    const lineContent = lines[i].trim();
+                    if (!lineContent) continue;
+
+                    const values = lines[i].split(',').map(v => v.trim());
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    localExcelData.push(row);
+                }
+            }
+
+            if (statusDiv) {
+                statusDiv.innerHTML = `<span style="color: #27ae60; font-weight: bold;">✅ ${fileName}</span><br/><small style="color: #999;">共 ${localExcelData.length} 筆記錄</small>`;
+            }
+            console.log('✅ 已成功讀取檔案，共', localExcelData.length, '筆記錄');
+        }
+
+
+        // ========== 表單元素 ==========
+        const form = document.getElementById('colorQAForm');
+        const alertBox = document.getElementById('alert');
+        const btnSearch = document.getElementById('btnSearch');
+        const btnClearSearch = document.getElementById('btnClearSearch');
+        const searchResults = document.getElementById('searchResults');
+        const searchResultsBody = document.getElementById('searchResultsBody');
+        const resultsCount = document.getElementById('resultsCount');
+        let lastSearchResults = [];
+        let currentRecord = null;
+        let localExcelData = [];  // 儲存上傳的 Excel 資料
+
+        // 更新提交按鈕狀態
+        function updateSubmitButtons() {
+            const btnAdd = document.getElementById('btn-add');
+            const btnEdit = document.getElementById('btn-edit');
+
+            if (currentRecord) {
+                // 修改模式
+                btnAdd.style.display = 'none';
+                btnEdit.style.display = 'inline-block';
+                console.log('🔄 切換為修改模式');
+            } else {
+                // 新增模式
+                btnAdd.style.display = 'inline-block';
+                btnEdit.style.display = 'none';
+                console.log('➕ 切換為新增模式');
+            }
+        }
+
+        // 載入下拉選單數據
+        async function loadDropdownValues() {
+            const datalistFields = [
+                { field: 'customer', datalistIds: ['customerList', 'searchCustomerList'] },
+                { field: 'applicant', datalistIds: ['applicantList'] },
+                { field: 'supplier', datalistIds: ['supplierList', 'searchSupplierList'] },
+                { field: 'dyeMethod', datalistIds: ['dyeMethodList'] },
+                { field: 'qaName', datalistIds: ['qaNameList'] },
+                { field: 'remarks', datalistIds: ['remarksList'] }
+            ];
+
+            for (const fieldConfig of datalistFields) {
+                try {
+                    // 優先使用本地 dropdownData
+                    let values = dropdownData[fieldConfig.field] || [];
+
+                    if (values && values.length > 0) {
+                        // 方式 1: 填充 datalist（用於 input[list]）
+                        fieldConfig.datalistIds.forEach(datalistId => {
+                            const datalist = document.getElementById(datalistId);
+                            if (datalist) {
+                                datalist.innerHTML = '';
+                                values.forEach(value => {
+                                    if (value && value.trim()) {
+                                        const option = document.createElement('option');
+                                        option.value = value;
+                                        datalist.appendChild(option);
+                                    }
+                                });
+                            }
+                        });
+
+                        // 方式 2: 填充同名 select（用於 select[name=...]）
+                        const selectId = `edit${fieldConfig.field.charAt(0).toUpperCase() + fieldConfig.field.slice(1)}`;
+                        const selectElement = document.getElementById(selectId);
+                        if (selectElement && selectElement.tagName === 'SELECT') {
+                            // 保留第一個 option（-- 選擇 --），再填充其他值
+                            while (selectElement.options.length > 1) {
+                                selectElement.remove(1);
+                            }
+                            values.forEach(value => {
+                                if (value && value.trim()) {
+                                    const option = document.createElement('option');
+                                    option.value = value;
+                                    option.textContent = value;
+                                    selectElement.appendChild(option);
+                                }
+                            });
+                            console.log(`✓ 已填充 ${selectId}: ${values.length} 個選項`);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`載入${fieldConfig.field}失敗:`, error);
+                }
+            }
+        }
+
+        // ========== 天數計算函數 ==========
+        // 計算實際工作日（不含週六日）
+        function calculateWorkingDays(receiveDate, receiveAMPM, shipDate, shipAMPM) {
+            try {
+                if (!receiveDate || !shipDate) return '--';
+
+                // 解析日期（datetime-local 格式：YYYY-MM-DDTHH:mm）
+                const inDate = new Date(receiveDate);
+                const outDate = new Date(shipDate);
+
+                if (isNaN(inDate) || isNaN(outDate)) return '--';
+
+                // 計算日期差
+                let workingDays = 0;
+                const daysDiff = Math.floor((outDate - inDate) / (1000 * 60 * 60 * 24));
+
+                // 統計工作日（週一到週五）
+                for (let i = 0; i <= daysDiff; i++) {
+                    const currentDate = new Date(inDate);
+                    currentDate.setDate(currentDate.getDate() + i);
+                    const dayOfWeek = currentDate.getDay();
+
+                    // dayOfWeek: 0=週日, 1=週一, ..., 6=週六
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        workingDays++;
+                    }
+                }
+
+                // 調整上下午時間
+                // 提取小時數判斷是否為下午（12:00 後視為 PM）
+                const inHour = inDate.getHours();
+                const outHour = outDate.getHours();
+
+                if (inHour >= 12) {
+                    workingDays -= 1;  // PM 收件 = -1 天
+                } else {
+                    workingDays -= 0.5; // AM 收件 = -0.5 天
+                }
+
+                if (outHour < 12) {
+                    workingDays -= 0.5; // AM 出件 = -0.5 天
+                }
+
+                // 最低 0.5 天
+                return workingDays <= 0 ? 0.5 : parseFloat(workingDays.toFixed(1));
+            } catch (error) {
+                console.error('計算工作日失敗:', error);
+                return '--';
+            }
+        }
+
+        // 載入布種（品名）列表
+        async function loadProductNames() {
+            // 使用本地資料
+            const productNames = dropdownData.knitFabric || [];
+            const datalist = document.getElementById('productNameList');
+            if (datalist) {
+                datalist.innerHTML = '';
+                productNames.forEach(name => {
+                    if (name && name.trim()) {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        datalist.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        // 查詢功能
+        btnSearch.addEventListener('click', performSearch);
+        btnClearSearch.addEventListener('click', clearSearch);
+
+        async function performSearch() {
+            const customer = document.getElementById('searchCustomer').value.trim();
+            const styleNo = document.getElementById('searchStyleNo').value.trim();
+            const supplier = document.getElementById('searchSupplier').value.trim();
+            const color = document.getElementById('searchColor').value.trim();
+
+            if (!customer && !styleNo && !supplier && !color) {
+                searchResultsBody.innerHTML = '<tr><td colspan="7" class="empty-state">請至少選擇一個搜尋條件</td></tr>';
+                resultsCount.textContent = '';
+                searchResults.classList.add('show');
+                return;
+            }
+
+            // 本地搜尋（不用 API）
+            try {
+                // 檢查是否有載入資料
+                if (!EXCEL_DATA_CACHE || EXCEL_DATA_CACHE.length === 0) {
+                    searchResultsBody.innerHTML = '<tr><td colspan="7" class="empty-state">❌ 請先選擇 Excel 檔案</td></tr>';
+                    resultsCount.textContent = '';
+                    searchResults.classList.add('show');
+                    return;
+                }
+
+                // 本地搜尋
+                const results = EXCEL_DATA_CACHE.filter(record => {
+                    if (customer) {
+                        const custVal = (record['客戶'] || '').toString().toLowerCase().trim();
+                        if (!custVal.includes(customer.toLowerCase())) return false;
+                    }
+                    if (styleNo) {
+                        const styleVal = (record['Style No'] || '').toString().toLowerCase().trim();
+                        if (!styleVal.includes(styleNo.toLowerCase())) return false;
+                    }
+                    if (supplier) {
+                        const suppVal = (record['供應商'] || '').toString().toLowerCase().trim();
+                        if (!suppVal.includes(supplier.toLowerCase())) return false;
+                    }
+                    if (color) {
+                        const colorVal = (record['顏色/花版'] || '').toString().toLowerCase().trim();
+                        if (!colorVal.includes(color.toLowerCase())) return false;
+                    }
+                    return true;
+                });
+
+                // 規範化數據
+                let normalizedData = results.map(record => {
+                    const normalized = {};
+                    Object.keys(record).forEach(key => {
+                        const trimmedKey = key ? key.trim() : '';
+                        if (trimmedKey) {
+                            normalized[trimmedKey] = record[key];
+                        }
+                    });
+                    return normalized;
+                });
+
+                // 檢查結果
+                if (!normalizedData || normalizedData.length === 0) {
+                    searchResultsBody.innerHTML = '<tr><td colspan="7" class="empty-state">查無相符記錄</td></tr>';
+                    resultsCount.textContent = `📊 共 0 筆`;
+                } else {
+                    displaySearchResults(normalizedData);
+                    resultsCount.textContent = `📊 共 ${normalizedData.length} 筆`;
+                    showAlert(`✅ 找到 ${normalizedData.length} 筆記錄`, 'success');
+                }
+
+                searchResults.classList.add('show');
+            } catch (error) {
+                console.error('查詢失敗:', error);
+                searchResultsBody.innerHTML = '<tr><td colspan="7" class="empty-state">❌ 查詢出錯</td></tr>';
+                searchResults.classList.add('show');
+            }
+        }
+
+        let currentPage = 1;
+        let currentColorGroupsArray = [];
+        let currentColorSampleTypeStats = {};
+        let currentTotalPages = 1;
+        const itemsPerPage = 6;
+
+        function displaySearchResults(records, resetPage = true) {
+            // 規範化記錄中的表頭
+            const normalizedRecords = records.map(record => {
+                const normalized = {};
+                Object.keys(record).forEach(key => {
+                    const trimmedKey = key.trim();
+                    normalized[trimmedKey] = record[key];
+                });
+                return normalized;
+            });
+
+            // 按顏色+樣品類別統計
+            const colorSampleTypeStats = {};
+            normalizedRecords.forEach(record => {
+                const color = record['顏色/花版'] || '未知';
+                const sampleType = record['樣品類別'] || '未知';
+                const key = `${color}|${sampleType}`;
+                if (!colorSampleTypeStats[key]) {
+                    colorSampleTypeStats[key] = {
+                        count: 0,
+                        latestQAName: '',
+                        latestConclusion: '',
+                        records: []
+                    };
+                }
+                colorSampleTypeStats[key].count++;
+                colorSampleTypeStats[key].latestQAName = record['核色人員'] || '';
+                colorSampleTypeStats[key].latestConclusion = record['結論'] || '';
+                colorSampleTypeStats[key].records.push(record);
+            });
+
+            // 按顏色分組（每種顏色只保留第一筆記錄）
+            const colorGroups = {};
+            normalizedRecords.forEach(record => {
+                const color = record['顏色/花版'] || '未知';
+                if (!colorGroups[color]) {
+                    colorGroups[color] = record;
+                }
+            });
+
+            // 計算分頁
+            const colorGroupsArray = Object.values(colorGroups);
+            const totalPages = Math.ceil(colorGroupsArray.length / itemsPerPage);
+
+            if (resetPage) {
+                currentPage = 1;
+            }
+
+            // 保存狀態供分頁使用
+            currentColorGroupsArray = colorGroupsArray;
+            currentColorSampleTypeStats = colorSampleTypeStats;
+            currentTotalPages = totalPages;
+
+            renderPage(colorGroupsArray, colorSampleTypeStats, totalPages);
+        }
+
+        function renderPage(colorGroupsArray, colorSampleTypeStats, totalPages) {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = colorGroupsArray.slice(start, end);
+
+            let html = '';
+
+            // 生成當前頁的記錄行
+            pageItems.forEach((record) => {
+                const color = record['顏色/花版'] || '未知';
+
+                // 找出該顏色的所有樣品類別統計
+                const sampleTypesForColor = {};
+                Object.entries(colorSampleTypeStats).forEach(([key, data]) => {
+                    const [c, st] = key.split('|');
+                    if (c === color) {
+                        sampleTypesForColor[st] = data;
+                    }
+                });
+
+                const statsHtml = Object.entries(sampleTypesForColor).map(([sampleType, data]) => {
+                    let conclusionColor = '#000';
+                    const conclusion = (data.latestConclusion || '').toUpperCase();
+                    if (conclusion.includes('PASS') || conclusion === 'P') {
+                        conclusionColor = '#0066cc';
+                    } else if (conclusion.includes('FAIL') || conclusion === 'F') {
+                        conclusionColor = '#cc0000';
+                    }
+
+                    const detailsId = `details-${color.replace(/[/\s]/g, '-')}-${sampleType.replace(/\//g, '-')}`;
+                    return `
+                        <div class="sample-stat" style="display: inline-block; cursor: pointer; margin-right: 8px;" data-details-id="${detailsId}">
+                            <strong>${sampleType}</strong>&nbsp;&nbsp;<span style="color: ${conclusionColor}; font-weight: bold;">共${data.count}筆&nbsp;&nbsp;${data.latestConclusion || '-'}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                html += `
+                    <tr>
+                        <td>${record['客戶'] || '-'}</td>
+                        <td>${record['Style No'] || '-'}</td>
+                        <td>${record['供應商'] || '-'}</td>
+                        <td>${record['品名'] || '-'}</td>
+                        <td>${record['染法'] || '-'}</td>
+                        <td>${record['顏色/花版'] || '-'}</td>
+                        <td style="text-align: left;">
+                            ${statsHtml}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // 生成 details 表格（只顯示當前頁的 details）
+            pageItems.forEach((record) => {
+                const color = record['顏色/花版'] || '未知';
+                Object.entries(colorSampleTypeStats).forEach(([key, data]) => {
+                    const [c, st] = key.split('|');
+                    if (c === color) {
+                        const detailsId = `details-${color.replace(/[/\s]/g, '-')}-${st.replace(/\//g, '-')}`;
+                        html += `
+                            <tr id="${detailsId}" style="display: none;">
+                                <td colspan="7" style="padding: 20px;">
+                                    <div style="background: #f9f9f9; padding: 12px; border: 1px solid #ddd; border-bottom: none; border-radius: 4px 4px 0 0;">
+                                        <div style="font-weight: bold; color: #333; font-size: 14px;">
+                                            ${record['客戶'] || '-'}&nbsp;&nbsp;${record['Style No'] || '-'}&nbsp;&nbsp;${record['供應商'] || '-'}&nbsp;&nbsp;${record['品名'] || '-'}&nbsp;&nbsp;${record['染法'] || '-'}&nbsp;&nbsp;${record['顏色/花版'] || '-'}
+                                        </div>
+                                    </div>
+                                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0 0 4px 4px;">
+                                        <thead>
+                                            <tr style="background: #f0f0f0; color: #000;">
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">收件日</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">出件日</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">預定天數</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">實際天數</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">樣品類別</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">核色人員</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000; display: none;">核色進度</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">結論</th>
+                                                <th style="padding: 8px; border: 1px solid #ddd; color: #000;">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.records.map((rec, recIndex) => {
+                                                let conColor = '#000';
+                                                const con = (rec['結論'] || '').toUpperCase();
+                                                if (con.includes('PASS') || con === 'P') conColor = '#0066cc';
+                                                else if (con.includes('FAIL') || con === 'F') conColor = '#cc0000';
+
+                                                const formatDate = (dateVal) => {
+                                                    if (!dateVal && dateVal !== 0) return '-';
+                                                    if (typeof dateVal === 'string') {
+                                                        // 含時間的格式（YYYY-MM-DD HH:mm 或 YYYY/MM/DD HH:mm）
+                                                        if (dateVal.match(/^\d{4}[-/]\d{2}[-/]\d{2}\s+\d{1,2}:\d{2}/)) {
+                                                            const datePart = dateVal.split(/\s+/)[0];
+                                                            return datePart.replace(/-/g, '/');
+                                                        }
+                                                        // 已是標準格式（YYYY/MM/DD 或 YYYY-MM-DD），直接返回
+                                                        if (dateVal.match(/^\d{4}[-/]\d{2}[-/]\d{2}$/)) {
+                                                            return dateVal.replace(/-/g, '/');
+                                                        }
+                                                        // 嘗試解析為日期
+                                                        const d = new Date(dateVal);
+                                                        if (!isNaN(d) && d.getFullYear() > 1970) {
+                                                            return d.toISOString().split('T')[0].replace(/-/g, '/');
+                                                        }
+                                                        return dateVal;  // 無法解析則返回原值
+                                                    }
+                                                    // 數字類型：可能是 Excel 序列號
+                                                    if (typeof dateVal === 'number' && dateVal > 100 && dateVal < 100000) {
+                                                        // Excel serial number 轉換（serial 1 = 1900-01-01）
+                                                        const excelEpoch = new Date(1899, 11, 30);
+                                                        const msPerDay = 24 * 60 * 60 * 1000;
+                                                        const excelDate = new Date(excelEpoch.getTime() + (dateVal + 1) * msPerDay);
+                                                        if (!isNaN(excelDate)) {
+                                                            return excelDate.toISOString().split('T')[0].replace(/-/g, '/');
+                                                        }
+                                                    }
+                                                    return '-';
+                                                };
+
+                                                // 計算天數
+                                                const actualDays = calculateWorkingDays(
+                                                    rec['收件日'],
+                                                    '',
+                                                    rec['出件日'],
+                                                    ''
+                                                );
+
+                                                // 核色進度著色
+                                                let mkColor = '#000';
+                                                const mkStatus = (rec['核色進度'] || '').toUpperCase();
+                                                if (mkStatus.includes('PASS')) mkColor = '#0066cc';
+                                                else if (mkStatus.includes('FAIL')) mkColor = '#cc0000';
+
+                                                return `
+                                                    <tr>
+                                                        <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(rec['收件日'])}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(rec['出件日'])}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold;">1.5</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${actualDays}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd;">${rec['樣品類別'] || '-'}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd;">${rec['核色人員'] || '-'}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd; color: ${mkColor}; font-weight: bold; display: none;">${rec['核色進度'] || '-'}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd; color: ${conColor}; font-weight: bold;">${rec['結論'] || '-'}</td>
+                                                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                                            <button class="details-bring-btn" data-record="${JSON.stringify(rec).replace(/"/g, '&quot;')}" style="padding: 4px 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 4px;">帶入</button>
+                                                            <button class="details-edit-btn" data-record="${JSON.stringify(rec).replace(/"/g, '&quot;')}" style="padding: 4px 12px; background: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 4px;">修改</button>
+                                                            <button class="details-delete-btn" data-record="${JSON.stringify(rec).replace(/"/g, '&quot;')}" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">刪除</button>
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            });
+
+            // 添加分頁導航
+            let paginationHtml = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 15px;">
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+            `;
+
+            if (currentPage > 1) {
+                paginationHtml += `<button class="pagination-btn" data-page="1" style="padding: 6px 12px; cursor: pointer;">首頁</button>`;
+                paginationHtml += `<button class="pagination-btn" data-page="${currentPage - 1}" style="padding: 6px 12px; cursor: pointer;">上一頁</button>`;
+            }
+
+            paginationHtml += `<span style="padding: 6px 12px; font-weight: bold;">第 ${currentPage} / ${totalPages} 頁</span>`;
+
+            if (currentPage < totalPages) {
+                paginationHtml += `<button class="pagination-btn" data-page="${currentPage + 1}" style="padding: 6px 12px; cursor: pointer;">下一頁</button>`;
+                paginationHtml += `<button class="pagination-btn" data-page="${totalPages}" style="padding: 6px 12px; cursor: pointer;">末頁</button>`;
+            }
+
+            paginationHtml += `
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            html += paginationHtml;
+            searchResultsBody.innerHTML = html;
+
+            // 添加展開/收合事件監聽
+            searchResultsBody.querySelectorAll('.sample-stat[data-details-id]').forEach(stat => {
+                stat.addEventListener('click', function() {
+                    const detailsId = this.getAttribute('data-details-id');
+                    const detailsRow = document.getElementById(detailsId);
+                    if (detailsRow) {
+                        // 先隱藏所有詳情表格
+                        searchResultsBody.querySelectorAll('[id^="details-"]').forEach(row => {
+                            row.style.display = 'none';
+                        });
+                        // 只顯示點擊的詳情表格
+                        detailsRow.style.display = 'table-row';
+                    }
+                });
+            });
+
+            // 添加分頁按鈕事件監聽
+            searchResultsBody.querySelectorAll('.pagination-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const pageNum = parseInt(this.getAttribute('data-page'));
+                    currentPage = pageNum;
+                    renderPage(currentColorGroupsArray, currentColorSampleTypeStats, currentTotalPages);
+                });
+            });
+
+            // 添加詳情表格「帶入」按鈕事件監聽（只填前8項核心欄位）
+            console.log('🔍 尋找帶入按鈕...', searchResultsBody.querySelectorAll('.details-bring-btn').length, '個');
+            searchResultsBody.querySelectorAll('.details-bring-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('✅ 帶入按鈕被點擊（只帶前8項）');
+                    try {
+                        let recordJson = this.getAttribute('data-record');
+                        console.log('📝 原始 JSON 長度:', recordJson ? recordJson.length : 0);
+
+                        // 解碼 HTML 實體（將 &quot; 轉換回 "）
+                        recordJson = recordJson.replace(/&quot;/g, '"');
+                        console.log('📝 解碼後長度:', recordJson.length);
+
+                        let recordData;
+                        try {
+                            recordData = JSON.parse(recordJson);
+                        } catch (parseError) {
+                            console.error('❌ JSON 解析失敗:', parseError.message);
+                            console.error('❌ 無效 JSON 內容:', recordJson ? recordJson.substring(0, 200) : '空');
+                            showAlert('❌ 記錄格式錯誤，無法帶入', 'error');
+                            return;
+                        }
+
+                        console.log('✓ JSON 解析成功');
+                        // 帶入模式：只填前8項，不設置 currentRecord（保持為 null 以新增模式）
+                        currentRecord = null;
+
+                        // 填入編輯區表單 - 只填前8項核心欄位
+                        if (form) {
+                            console.log('🔧 開始填入前8項核心欄位...');
+                            form.customer.value = recordData['客戶'] || '';
+                            form.applicant.value = recordData['申請人'] || '';
+                            form.styleNo.value = recordData['Style No'] || '';
+                            form.supplier.value = recordData['供應商'] || '';
+                            form.category.value = recordData['品項'] || '';
+                            form.productName.value = recordData['品名'] || '';
+                            form.dyeMethod.value = recordData['染法'] || '';
+                            form.color.value = recordData['顏色/花版'] || '';
+
+                            // 清空其他欄位
+                            form.sampleType.value = '';
+                            form.sampleNo.value = '';
+                            form.sampleQty.value = '';
+                            form.seqNo.value = '';
+                            form.qaCategory.value = '';
+                            form.qaName.value = '';
+                            form.mkProgress.value = '';
+                            form.conclusion.value = '';
+                            form.remarks.value = '';
+                            form.receiveDate.value = '';
+                            form.shipDate.value = '';
+                            form.cqUploadDate.value = '';
+                            console.log('✅ 前8項核心欄位已填入，其他欄位已清空');
+
+                            // 根據結論改變顏色
+                            const conclusionVal = (recordData['結論'] || '').toUpperCase();
+                            let conColor = '#000';
+                            if (conclusionVal.includes('PASS') || conclusionVal === 'P') {
+                                conColor = '#0066cc';
+                            } else if (conclusionVal.includes('FAIL') || conclusionVal === 'F') {
+                                conColor = '#cc0000';
+                            }
+                            if (form.conclusion) {
+                                form.conclusion.style.color = conColor;
+                                form.conclusion.style.fontWeight = 'bold';
+                            }
+                        } else {
+                            console.error('❌ 編輯表單不存在');
+                        }
+
+                        // 自動填入當天日期到收件日
+                        const today = new Date();
+                        const year = today.getFullYear();
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const day = String(today.getDate()).padStart(2, '0');
+                        const hour = String(today.getHours()).padStart(2, '0');
+                        const minute = String(today.getMinutes()).padStart(2, '0');
+                        const todayDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
+
+                        if (form.receiveDate) {
+                            form.receiveDate.value = todayDateTime;
+                            console.log('📅 已自動填入當天日期到收件日:', todayDateTime);
+                        }
+
+                        // 在表單內顯示提示
+                        const formAlert = document.getElementById('formAlert');
+                        formAlert.innerHTML = '✅ 前8項已帶入編輯區，收件日已自動填入當天日期，請填完其他欄位後新增';
+                        formAlert.className = 'alert success';
+                        formAlert.style.display = 'block';
+                        formAlert.onclick = () => { formAlert.style.display = 'none'; };
+                        updateSubmitButtons();
+                    } catch (error) {
+                        showAlert('❌ 帶入失敗: ' + error.message, 'error');
+                    }
+                });
+            });
+
+            // 添加詳情表格「修改」按鈕事件監聽（填所有9項）
+            console.log('🔍 尋找修改按鈕...', searchResultsBody.querySelectorAll('.details-edit-btn').length, '個');
+            searchResultsBody.querySelectorAll('.details-edit-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('✏️ 修改按鈕被點擊（填所有9項）');
+                    try {
+                        let recordJson = this.getAttribute('data-record');
+                        console.log('📝 原始 JSON 長度:', recordJson ? recordJson.length : 0);
+
+                        // 解碼 HTML 實體（將 &quot; 轉換回 "）
+                        recordJson = recordJson.replace(/&quot;/g, '"');
+                        console.log('📝 解碼後長度:', recordJson.length);
+
+                        let recordData;
+                        try {
+                            recordData = JSON.parse(recordJson);
+                        } catch (parseError) {
+                            console.error('❌ JSON 解析失敗:', parseError.message);
+                            console.error('❌ 無效 JSON 內容:', recordJson ? recordJson.substring(0, 200) : '空');
+                            showAlert('❌ 記錄格式錯誤，無法修改', 'error');
+                            return;
+                        }
+
+                        console.log('✓ JSON 解析成功');
+                        console.log('📝 樣品類別:', recordData['樣品類別']);
+                        // 修改模式：設置 currentRecord 以便存回原位置
+                        currentRecord = recordData;
+
+                        // 填入編輯區表單 - 填所有9項
+                        if (form) {
+                            console.log('🔧 開始填入所有9項欄位...');
+                            form.customer.value = recordData['客戶'] || '';
+                            form.applicant.value = recordData['申請人'] || '';
+                            form.styleNo.value = recordData['Style No'] || '';
+                            form.supplier.value = recordData['供應商'] || '';
+                            form.category.value = recordData['品項'] || '';
+                            form.productName.value = recordData['品名'] || '';
+                            form.dyeMethod.value = recordData['染法'] || '';
+                            form.color.value = recordData['顏色/花版'] || '';
+
+                            // 第9項：樣品類別
+                            const sampleTypeVal = recordData['樣品類別'] || '';
+                            console.log('🎯 要填入的樣品類別:', sampleTypeVal);
+                            form.sampleType.value = sampleTypeVal;
+                            console.log('✓ 樣品類別已填:', form.sampleType.value);
+
+                            form.sampleNo.value = recordData['樣品編號'] || '';
+                            form.sampleQty.value = recordData['樣品數'] || '';
+                            form.seqNo.value = recordData['序號'] || '';
+                            form.qaCategory.value = recordData['核色類別'] || '';
+                            form.qaName.value = recordData['核色人員'] || '';
+                            form.mkProgress.value = recordData['核色進度'] || '';
+                            form.conclusion.value = recordData['結論'] || '';
+                            form.remarks.value = recordData['備註'] || '';
+                            console.log('✅ 所有9項欄位已填入');
+
+                            // 根據結論改變顏色
+                            const conclusionVal = (recordData['結論'] || '').toUpperCase();
+                            let conColor = '#000';
+                            if (conclusionVal.includes('PASS') || conclusionVal === 'P') {
+                                conColor = '#0066cc';
+                            } else if (conclusionVal.includes('FAIL') || conclusionVal === 'F') {
+                                conColor = '#cc0000';
+                            }
+                            if (form.conclusion) {
+                                form.conclusion.style.color = conColor;
+                                form.conclusion.style.fontWeight = 'bold';
+                            }
+                        } else {
+                            console.error('❌ 編輯表單不存在');
+                        }
+
+                        // 格式化日期為 datetime-local 格式 (YYYY-MM-DDTHH:mm)，空值保持空格
+                        const formatDateForInput = (dateVal) => {
+                            // 如果為空、null 或 undefined，保持空值
+                            if (!dateVal && dateVal !== 0) {
+                                return '';
+                            }
+                            if (typeof dateVal === 'string') {
+                                const trimmed = dateVal.toString().trim();
+                                if (!trimmed) {
+                                    return '';
+                                }
+                                // 如果是 YYYY-MM-DDTHH:mm 格式，直接返回
+                                if (trimmed.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) return trimmed;
+                                // 如果是 YYYY/MM/DD:HH 格式，轉換為 YYYY-MM-DDTHH:00
+                                if (trimmed.match(/^\d{4}\/\d{2}\/\d{2}:\d{2}$/)) {
+                                    return trimmed.replace(/\//g, '-').replace(':', 'T') + ':00';
+                                }
+                                // 如果是 YYYY-MM-DD 格式，轉換為 YYYY-MM-DDTHH:00
+                                if (trimmed.match(/^\d{4}-\d{2}-\d{2}$/)) return trimmed + 'T00:00';
+                                // 如果是 YYYY/MM/DD 格式，轉換為 YYYY-MM-DDTHH:00
+                                if (trimmed.match(/^\d{4}\/\d{2}\/\d{2}$/)) return trimmed.replace(/\//g, '-') + 'T00:00';
+                                return trimmed;
+                            }
+                            // 處理 Excel 序列號（數字類型）
+                            if (typeof dateVal === 'number' && dateVal > 100 && dateVal < 100000) {
+                                const excelEpoch = new Date(1899, 11, 30);
+                                const msPerDay = 24 * 60 * 60 * 1000;
+                                const excelDate = new Date(excelEpoch.getTime() + dateVal * msPerDay);
+                                if (!isNaN(excelDate)) {
+                                    const year = excelDate.getFullYear();
+                                    const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+                                    const day = String(excelDate.getDate()).padStart(2, '0');
+                                    return `${year}-${month}-${day}T00:00`;
+                                }
+                            }
+                            // 處理 Date 物件或其他時間戳
+                            const d = new Date(dateVal);
+                            if (isNaN(d)) {
+                                // 無效日期，保持空值
+                                return '';
+                            }
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const hour = String(d.getHours()).padStart(2, '0');
+                            const min = String(d.getMinutes()).padStart(2, '0');
+                            return `${year}-${month}-${day}T${hour}:${min}`;
+                        };
+
+                        // 收件日和出件日
+                        if (form.receiveDate) form.receiveDate.value = formatDateForInput(recordData['收件日'] || recordData.receiveDate || '');
+                        if (form.shipDate) form.shipDate.value = formatDateForInput(recordData['出件日'] || recordData.shipDate || '');
+                        if (form.cqUploadDate) form.cqUploadDate.value = formatDateForInput(recordData['CQ上傳日期'] || recordData.cqUploadDate || '');
+
+                        showAlert('✅ 記錄已帶入修改區', 'success');
+                        updateSubmitButtons();
+                    } catch (error) {
+                        showAlert('❌ 修改帶入失敗: ' + error.message, 'error');
+                    }
+                });
+            });
+
+            // 添加詳情表格「刪除」按鈕事件監聽
+            console.log('🔍 尋找刪除按鈕...', searchResultsBody.querySelectorAll('.details-delete-btn').length, '個');
+            searchResultsBody.querySelectorAll('.details-delete-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    console.log('🗑️ 刪除按鈕被點擊');
+                    try {
+                        let recordJson = this.getAttribute('data-record');
+                        recordJson = recordJson.replace(/&quot;/g, '"');
+                        const recordData = JSON.parse(recordJson);
+
+                        // 確認刪除
+                        if (!confirm(`確認要刪除此記錄嗎？\n\n樣品類別: ${recordData['樣品類別']}\n核色人員: ${recordData['核色人員']}\n結論: ${recordData['結論']}`)) {
+                            console.log('❌ 刪除已取消');
+                            return;
+                        }
+
+                        console.log('🗑️ 開始刪除記錄...');
+
+                        // 從緩存中移除記錄
+                        const deleteIndex = EXCEL_DATA_CACHE.findIndex(rec =>
+                            rec['客戶'] === recordData['客戶'] &&
+                            rec['申請人'] === recordData['申請人'] &&
+                            rec['Style No'] === recordData['Style No'] &&
+                            rec['供應商'] === recordData['供應商'] &&
+                            rec['品項'] === recordData['品項'] &&
+                            rec['品名'] === recordData['品名'] &&
+                            rec['染法'] === recordData['染法'] &&
+                            rec['顏色/花版'] === recordData['顏色/花版'] &&
+                            rec['樣品類別'] === recordData['樣品類別']
+                        );
+
+                        if (deleteIndex >= 0) {
+                            const deletedRecord = EXCEL_DATA_CACHE[deleteIndex];
+                            const deletedACol = deletedRecord['A'] || '';
+                            EXCEL_DATA_CACHE.splice(deleteIndex, 1);
+                            console.log('✓ 記錄已從緩存移除');
+
+                            // 重新編碼同一核色編號的 A 欄 (序號順遞往前)
+                            // 核色編號 = 前 8 項（客戶、申請人、Style No、供應商、品項、品名、染法、顏色/花版）
+                            const sameColorRecords = EXCEL_DATA_CACHE.filter(rec =>
+                                rec['客戶'] === deletedRecord['客戶'] &&
+                                rec['申請人'] === deletedRecord['申請人'] &&
+                                rec['Style No'] === deletedRecord['Style No'] &&
+                                rec['供應商'] === deletedRecord['供應商'] &&
+                                rec['品項'] === deletedRecord['品項'] &&
+                                rec['品名'] === deletedRecord['品名'] &&
+                                rec['染法'] === deletedRecord['染法'] &&
+                                rec['顏色/花版'] === deletedRecord['顏色/花版']
+                            );
+
+                            console.log('🔄 找到同核色記錄:', sameColorRecords.length, '筆');
+
+                            // 提取被刪除記錄的編碼前綴（例如 A02 中的 A）
+                            const deletedCodeMatch = deletedACol.match(/^([A-Z]+)/);
+                            const deletedCodePrefix = deletedCodeMatch ? deletedCodeMatch[1] : '';
+                            const deletedCodeNum = parseInt(deletedACol.match(/\d+/) ? deletedACol.match(/\d+/)[0] : '0');
+
+                            console.log(`🗑️ 刪除: ${deletedACol} (前綴: ${deletedCodePrefix}, 序號: ${deletedCodeNum})`);
+
+                            // 只重編相同編碼前綴的記錄
+                            const samePrefixRecords = EXCEL_DATA_CACHE.filter(rec =>
+                                rec['客戶'] === deletedRecord['客戶'] &&
+                                rec['申請人'] === deletedRecord['申請人'] &&
+                                rec['Style No'] === deletedRecord['Style No'] &&
+                                rec['供應商'] === deletedRecord['供應商'] &&
+                                rec['品項'] === deletedRecord['品項'] &&
+                                rec['品名'] === deletedRecord['品名'] &&
+                                rec['染法'] === deletedRecord['染法'] &&
+                                rec['顏色/花版'] === deletedRecord['顏色/花版'] &&
+                                (rec['A'] || '').startsWith(deletedCodePrefix)
+                            );
+
+                            console.log(`🔄 同前綴 (${deletedCodePrefix}) 的記錄: ${samePrefixRecords.length} 筆`);
+
+                            // 按序號排序
+                            samePrefixRecords.sort((a, b) => {
+                                const numA = parseInt((a['A'] || '').match(/\d+$/) ? (a['A'] || '').match(/\d+$/)[0] : '0');
+                                const numB = parseInt((b['A'] || '').match(/\d+$/) ? (b['A'] || '').match(/\d+$/)[0] : '0');
+                                return numA - numB;
+                            });
+
+                            // 重新編號（序號順遞往前）
+                            samePrefixRecords.forEach((rec, idx) => {
+                                const newSeqNum = String(idx + 1).padStart(2, '0');
+                                const oldACol = rec['A'];
+                                rec['A'] = `${deletedCodePrefix}${newSeqNum}`;
+                                if (oldACol !== rec['A']) {
+                                    console.log(`✓ 重編: ${oldACol} → ${rec['A']}`);
+                                }
+                            });
+
+                            // 發送資料到 Flask 後端保存
+                            console.log('💾 發送刪除後的資料到 Flask 伺服器...');
+                            try {
+                                const response = await fetch('http://localhost:5000/api/save', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        action: 'delete',
+                                        allData: EXCEL_DATA_CACHE
+                                    })
+                                });
+
+                                if (!response.ok) {
+                                    throw new Error(`伺服器錯誤: ${response.statusText}`);
+                                }
+
+                                const result = await response.json();
+                                if (result.success) {
+                                    showAlert('✅ 記錄已刪除，A欄已重編', 'success');
+                                    performSearch(); // 重新查詢
+                                } else {
+                                    showAlert('❌ 刪除失敗: ' + result.message, 'error');
+                                }
+                            } catch (fetchError) {
+                                console.error('❌ Flask 連線失敗:', fetchError.message);
+                                showAlert('❌ 無法連線到伺服器。請確保已啟動 start.bat', 'error');
+                            }
+                        } else {
+                            showAlert('❌ 找不到該記錄', 'error');
+                        }
+                    } catch (error) {
+                        console.error('❌ 刪除失敗:', error.message);
+                        showAlert('❌ 刪除失敗: ' + error.message, 'error');
+                    }
+                });
+            });
+
+            // 結論 select 改變時更新顏色
+            if (form.conclusion) {
+                form.conclusion.addEventListener('change', function() {
+                    const val = (this.value || '').toUpperCase();
+                    let color = '#000';
+                    if (val.includes('PASS') || val === 'P') {
+                        color = '#0066cc';
+                    } else if (val.includes('FAIL') || val === 'F') {
+                        color = '#cc0000';
+                    }
+                    this.style.color = color;
+                    this.style.fontWeight = 'bold';
+                });
+            }
+
+            // 評語/備註欄位改變時自動添加新值到下拉清單
+            if (form.remarks) {
+                form.remarks.addEventListener('blur', function() {
+                    const remarkValue = (this.value || '').trim();
+                    if (remarkValue && !dropdownData['remarks'].includes(remarkValue)) {
+                        dropdownData['remarks'].push(remarkValue);
+                        console.log('✅ 新增評語到清單:', remarkValue);
+
+                        // 更新 datalist
+                        const datalist = document.getElementById('remarksList');
+                        if (datalist) {
+                            const option = document.createElement('option');
+                            option.value = remarkValue;
+                            datalist.appendChild(option);
+                        }
+
+                        // 已禁用 localStorage 保存，使用硬編碼的完整值
+                        // localStorage.setItem('dropdownData', JSON.stringify(dropdownData));
+                    }
+                });
+            }
+        }
+
+        function loadRecord(index) {
+            if (index >= 0 && index < lastSearchResults.length) {
+                const record = lastSearchResults[index];
+                currentRecord = record;
+
+                form.customer.value = record.customer || '';
+                form.applicant.value = record.applicant || '';
+                form.styleNo.value = record.styleNo || '';
+                form.supplier.value = record.supplier || '';
+                form.category.value = record.category || '';
+                form.productName.value = record.productName || '';
+                // 修正舊的截斷值
+                let dyeMethodValue = (record.dyeMethod || '').trim();
+                if (dyeMethodValue === 'PR') dyeMethodValue = 'PRT';  // 修正舊的截斷值
+                form.dyeMethod.value = dyeMethodValue;
+                form.color.value = record.color || '';
+                form.sampleType.value = record.sampleType || '';
+                form.sampleNo.value = record.sampleNo || '';
+                form.sampleQty.value = record.sampleQty || '';
+                form.seqNo.value = record.seqNo || '';
+                form.qaName.value = record.qaName || '';
+                form.mkProgress.value = record.mkProgress || '';
+
+                form.conclusion.value = record.conclusion || '';
+                form.remarks.value = record.remarks || '';
+
+                // 格式化日期為 YYYY-MM-DD
+                const formatDateForInput2 = (dateVal) => {
+                    if (!dateVal) return '';
+                    if (typeof dateVal === 'string') {
+                        if (dateVal.match(/^\d{4}-\d{2}-\d{2}$/)) return dateVal;
+                        if (dateVal.match(/^\d{4}\/\d{2}\/\d{2}$/)) return dateVal.replace(/\//g, '-');
+                        return dateVal;
+                    }
+                    const d = new Date(dateVal);
+                    return isNaN(d) ? '' : d.toISOString().split('T')[0];
+                };
+
+                form.receiveDate.value = formatDateForInput2(record.receiveDate);
+                form.shipDate.value = formatDateForInput2(record.shipDate);
+                form.cqUploadDate.value = formatDateForInput2(record.cqUploadDate);
+
+                showAlert('✅ 記錄已帶入編輯區', 'success');
+                window.scrollTo({ top: 800, behavior: 'smooth' });
+            }
+        }
+
+        async function deleteRecord(rowIndex) {
+            if (confirm('確認要刪除此記錄嗎？')) {
+                try {
+                    const response = await fetch(`/api/delete-record/${rowIndex}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('✅ 記錄已刪除', 'success');
+                        performSearch();
+                    } else {
+                        showAlert('❌ 刪除失敗: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    showAlert('刪除失敗: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchCustomer').value = '';
+            document.getElementById('searchStyleNo').value = '';
+            document.getElementById('searchSupplier').value = '';
+            document.getElementById('searchColor').value = '';
+            document.getElementById('searchDateFrom').value = '';
+            document.getElementById('searchDateTo').value = '';
+            searchResults.classList.remove('show');
+            resultsCount.textContent = '';
+
+            // 清空表單
+            formInputs.forEach(input => input.value = '');
+            currentRecord = null;
+            updateSubmitButtons();
+        }
+
+        // 表單提交
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('📤 表單提交觸發');
+
+            // 直接從表單元素取值，而不用 FormData（避免可能的截斷）
+            let dyeMethodVal = form.dyeMethod?.value || '';
+            // 修正舊的截斷值
+            if (dyeMethodVal === 'PR') dyeMethodVal = 'PRT';
+
+            // 調試：打印實際時間值
+            console.log('🔍 [DEBUG] receiveDate 實際值:', form.receiveDate?.value);
+            console.log('🔍 [DEBUG] shipDate 實際值:', form.shipDate?.value);
+
+            const data = {
+                recordNo: form.seqNo?.value || '',
+                receiveDate: form.receiveDate?.value || '',
+                shipDate: form.shipDate?.value || '',
+                customer: form.customer?.value || '',
+                applicant: form.applicant?.value || '',
+                styleNo: form.styleNo?.value || '',
+                supplier: form.supplier?.value || '',
+                category: form.category?.value || '',
+                productName: form.productName?.value || '',
+                dyeMethod: dyeMethodVal,
+                color: form.color?.value || '',
+                sampleQty: form.sampleQty?.value || '',
+                sampleNo: form.sampleNo?.value || '',
+                seqNo: form.seqNo?.value || '',
+                qaCategory: form.qaCategory?.value || '',
+                sampleType: form.sampleType?.value || '',
+                qaName: form.qaName?.value || '',
+                mkProgress: form.mkProgress?.value || '',
+                conclusion: form.conclusion?.value || '',
+                remarks: form.remarks?.value || '',
+                cqUploadDate: form.cqUploadDate?.value || '',
+                receiveTimePeriod: form.receiveTimePeriod?.value || '',
+                shipTimePeriod: form.shipTimePeriod?.value || '',
+                estimatedDays: form.estimatedDays?.value || '',
+                actualDays: form.actualDays?.value || '',
+                receiveSeqNo: form.receiveSeqNo?.value || ''
+            };
+            console.log('📋 表單數據:', data);
+            console.log('🔍 color 完整值:', data.color, `長度: ${data.color.length}`);
+            console.log('🔍 dyeMethod 完整值:', data.dyeMethod, `長度: ${data.dyeMethod.length}`);
+
+            // 驗證必填項（核色人員必填，結論選填）
+            if (!data.customer || !data.applicant || !data.styleNo || !data.supplier ||
+                !data.category || !data.productName || !data.dyeMethod || !data.color ||
+                !data.sampleType || !data.qaName) {
+                console.log('❌ 驗證失敗，缺少必填欄位');
+                showAlert('❌ 請填寫所有必填項目（標記 * 的欄位）', 'error');
+                return;
+            }
+            console.log('✓ 表單驗證通過');
+
+            try {
+                // 檢查是否選擇了 Excel 檔案
+                if (!EXCEL_FILE_HANDLE) {
+                    console.log('❌ 檢查失敗：未選擇 Excel 檔案');
+                    showAlert('❌ 請先選擇要儲存的 Excel 檔案', 'error');
+                    return;
+                }
+                console.log('✓ Excel 檔案檢查通過');
+
+                // 準備保存數據（將 datetime-local 格式轉換為 YYYY/MM/DD:HH）
+                const convertDateTimeToExcelFormat = (dateTimeVal) => {
+                    if (!dateTimeVal) return '';
+                    // 保留完整的日期時間格式，讓 Flask 判定時段
+                    return dateTimeVal;
+                };
+
+                // 構建記錄對象
+                const recordToSave = {
+                    '編號': data.recordNo,
+                    '客戶': data.customer,
+                    '申請人': data.applicant,
+                    'Style No': data.styleNo,
+                    '供應商': data.supplier,
+                    '品項': data.category,
+                    '品名': data.productName,
+                    '染法': data.dyeMethod,
+                    '顏色/花版': data.color,
+                    '樣品數': data.sampleQty,
+                    '樣品編號': data.sampleNo,
+                    '核色類別': data.qaCategory,
+                    '樣品類別': data.sampleType,
+                    '序號': data.seqNo,
+                    '核色進度': `${data.conclusion || ''} by MK`,
+                    '收件日': convertDateTimeToExcelFormat(data.receiveDate),
+                    '時段': data.receiveTimePeriod,
+                    '出件日': convertDateTimeToExcelFormat(data.shipDate),
+                    '時段': data.shipTimePeriod,
+                    '預定天數': data.estimatedDays,
+                    '實際天數': data.actualDays,
+                    '核色人員': data.qaName,
+                    '結論': data.conclusion,
+                    '評語/備註': data.remarks,
+                    'CQ上傳日期': data.cqUploadDate,
+                    '收件序號': data.receiveSeqNo
+                };
+
+                // 判斷是新增還是修改：前 9 項完全相同才修改，否則新增
+                // 前 9 項：客戶、申請人、Style No、供應商、品項、品名、染法、顏色/花版、樣品類別
+                // 前 8 項相同但樣品類別不同 = 同核色但不同樣品類別 = 新增
+                const isNewRecord = !currentRecord ||
+                    currentRecord['客戶'] !== data.customer ||
+                    currentRecord['申請人'] !== data.applicant ||
+                    currentRecord['Style No'] !== data.styleNo ||
+                    currentRecord['供應商'] !== data.supplier ||
+                    currentRecord['品項'] !== data.category ||
+                    currentRecord['品名'] !== data.productName ||
+                    currentRecord['染法'] !== data.dyeMethod ||
+                    currentRecord['顏色/花版'] !== data.color ||
+                    currentRecord['樣品類別'] !== data.sampleType;
+
+                console.log('🔍 判斷是否新增 - isNewRecord:', isNewRecord);
+
+                // 判斷用戶按的是哪個按鈕（新增或修改）
+                const submitter = e.submitter;
+                const userClickedAdd = submitter && submitter.id === 'btn-add';
+                const userClickedEdit = submitter && submitter.id === 'btn-edit';
+
+                console.log('🔘 用戶操作:', { userClickedAdd, userClickedEdit, isNewRecord });
+
+                let actionMsg = '';
+                let shouldConfirm = true;
+
+                // 檢查用戶意圖與系統偵測是否匹配
+                if (userClickedEdit && isNewRecord) {
+                    // 用戶按「修改」但系統偵測為新增
+                    actionMsg = `⚠️ 您選擇了「修改記錄」\n但系統偵測此為新增記錄\n\n確認要執行新增而不是修改嗎？\n\n客戶: ${data.customer}\nStyle No: ${data.styleNo}\n供應商: ${data.supplier}`;
+                } else if (userClickedAdd && !isNewRecord) {
+                    // 用戶按「新增」但系統偵測此記錄已存在
+                    actionMsg = `⚠️ 您選擇了「新增記錄」\n但系統偵測此記錄已存在\n\n確認要新增重複記錄嗎？\n還是改為修改現有記錄？\n\n客戶: ${data.customer}\nStyle No: ${data.styleNo}\n供應商: ${data.supplier}\n樣品類別: ${data.sampleType}`;
+                } else if (isNewRecord) {
+                    // 正常新增
+                    actionMsg = `確認要新增此記錄嗎？\n\n客戶: ${data.customer}\nStyle No: ${data.styleNo}\n供應商: ${data.supplier}`;
+                } else {
+                    // 正常修改
+                    actionMsg = `確認要修改此記錄嗎？\n\n客戶: ${data.customer}\nStyle No: ${data.styleNo}\n供應商: ${data.supplier}\n樣品類別: ${data.sampleType}`;
+                }
+
+                // 跳確認對話框
+                if (!confirm(actionMsg)) {
+                    const action = isNewRecord ? '新增' : '修改';
+                    showAlert(`⚠️ ${action}已取消`, 'error');
+                    return;
+                }
+
+                // 檢查是否選擇了 Excel 檔案（File System Access API）
+                if (!EXCEL_FILE_HANDLE) {
+                    showAlert('❌ 請先選擇要儲存的 Excel 檔案', 'error');
+                    return;
+                }
+
+                // 直接寫入 Excel（不用 API）
+                try {
+                    console.log('💾 開始保存記錄...');
+                    console.log('📝 記錄數據:', recordToSave);
+
+                    // 添加或更新緩存
+                    if (isNewRecord) {
+                        // 新增記錄
+                        EXCEL_DATA_CACHE.push(recordToSave);
+                        console.log('✓ 新記錄已添加，共', EXCEL_DATA_CACHE.length, '筆');
+                    } else {
+                        // 修改記錄：找到現有記錄並替換
+                        const existingIndex = EXCEL_DATA_CACHE.findIndex(rec =>
+                            rec['客戶'] === data.customer &&
+                            rec['申請人'] === data.applicant &&
+                            rec['Style No'] === data.styleNo &&
+                            rec['供應商'] === data.supplier &&
+                            rec['品項'] === data.category &&
+                            rec['品名'] === data.productName &&
+                            rec['染法'] === data.dyeMethod &&
+                            rec['顏色/花版'] === data.color
+                        );
+
+                        if (existingIndex >= 0) {
+                            EXCEL_DATA_CACHE[existingIndex] = recordToSave;
+                            console.log('✓ 記錄已修改，位置:', existingIndex);
+                        } else {
+                            // 找不到現有記錄，當新增處理
+                            EXCEL_DATA_CACHE.push(recordToSave);
+                            console.log('⚠️ 找不到現有記錄，已新增');
+                        }
+                    }
+
+                    // 發送資料到 Flask 後端保存（保留格式）
+                    console.log('💾 開始發送資料到 Flask 伺服器...');
+                    try {
+                        // 取得選擇的檔案路徑
+                        let selectedFilePath = '';
+                        if (EXCEL_FILE_HANDLE) {
+                            // 嘗試獲取檔案路徑（FSA 可能無法提供完整路徑，但會嘗試）
+                            try {
+                                const file = await EXCEL_FILE_HANDLE.getFile();
+                                // FSA 無法提供完整路徑，但我們可以存儲檔案名稱
+                                selectedFilePath = EXCEL_FILE_HANDLE.name || 'Color Comments Record_QA.xlsx';
+                            } catch (e) {
+                                selectedFilePath = 'Color Comments Record_QA.xlsx';
+                            }
+                        }
+
+                        const requestPayload = {
+                            action: isNewRecord ? 'add' : 'update',
+                            record: recordToSave,
+                            filePath: selectedFilePath
+                        };
+                        console.log('📤 即將發送到 Flask:');
+                        console.log('  供應商:', recordToSave['供應商'], `長度: ${String(recordToSave['供應商']).length}`);
+                        console.log('  染法:', recordToSave['染法'], `長度: ${String(recordToSave['染法']).length}`);
+                        console.log('  顏色/花版:', recordToSave['顏色/花版'], `長度: ${String(recordToSave['顏色/花版']).length}`);
+                        console.log('  完整 payload:', JSON.stringify(recordToSave, null, 2));
+
+                        const response = await fetch('http://localhost:5000/api/save', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(requestPayload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`伺服器錯誤: ${response.statusText}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('✓ 伺服器回應:', result);
+
+                        if (result.success) {
+                            showAlert('✅ 記錄已保存到 Excel！', 'success');
+                        } else {
+                            showAlert('❌ 保存失敗: ' + result.message, 'error');
+                            return;
+                        }
+                    } catch (fetchError) {
+                        console.error('❌ Flask 連線失敗:', fetchError.message);
+                        showAlert('❌ 無法連線到伺服器。請確保已啟動 start.bat', 'error');
+                        return;
+                    }
+
+                    // 清空表單
+                    const formInputs = document.querySelectorAll('#editForm input, #editForm select, #editForm textarea');
+                    formInputs.forEach(input => input.value = '');
+                    currentRecord = null;
+                    updateSubmitButtons();
+                    console.log('✅ 表單已清空，保存完成');
+                } catch (err) {
+                    console.error('❌ 保存失敗:', err.message);
+                    console.error('❌ 錯誤堆棧:', err.stack);
+                    showAlert('❌ 保存失敗: ' + err.message, 'error');
+                }
+
+            } catch (error) {
+                showAlert('❌ 錯誤: ' + error.message, 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            alertBox.innerHTML = message.replace(/\\n/g, '<br>');
+            alertBox.className = `alert ${type}`;
+            alertBox.style.cursor = 'pointer';
+            alertBox.style.display = 'block';
+            // 點擊關閉提示
+            alertBox.onclick = () => {
+                alertBox.className = 'alert';
+                alertBox.style.display = 'none';
+            };
+            // 自動消失時間
+            if (type === 'error') {
+                setTimeout(() => {
+                    alertBox.className = 'alert';
+                    alertBox.style.display = 'none';
+                }, 5000);
+            } else if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.className = 'alert';
+                    alertBox.style.display = 'none';
+                }, 3000);  // success 3秒後消失
+            }
+        }
+
+        // ========== 頁籤功能 ==========
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabName = btn.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            // 隱藏所有頁籤
+            document.querySelectorAll('.tabs-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 移除所有按鈕的 active 狀態
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 顯示選中的頁籤
+            const activeTab = document.getElementById(tabName);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            // 標記活動按鈕
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // 如果是下拉選單管理頁籤，初始化表格
+            if (tabName === 'dropdown-tab') {
+                renderDropdownTable();
+            }
+        }
+
+        // ========== 下拉選單管理功能 ==========
+        const DROPDOWN_FIELDS = [
+            { key: 'customer', label: '客戶' },
+            { key: 'applicant', label: '申請人' },
+            { key: 'supplier', label: '供應商' },
+            { key: 'category', label: '品項' },
+            { key: 'knitFabric', label: '針織布' },
+            { key: 'wovenFabric', label: '梭織布' },
+            { key: 'dyeMethod', label: '染法' },
+            { key: 'remarks', label: '評語/備註' },
+            { key: 'qaName', label: '核色人員' }
+        ];
+
+        let dropdownData = {
+            customer: ["A-ALPINE", "A-CALIA", "A-CALIA GOLF", "A-CCS WOMAN", "A-VRST", "B-ALPINE", "B-CALIA GOLF", "B-CCS", "B-CCS PERFECT GAME", "B-DSG", "B-VRST GOLF", "B-WALTER HAGEN"],
+            applicant: ["Angela Chen", "ALAN", "ALICE SONG", "Bernice Chang", "Cherry Tien", "Demi Hsu", "Elain Huang", "Emma Kuo", "Erica Chang", "Erica Hsu", "ETTA CHIANG", "GINA PENG", "Gloria Tseng", "Ivy Lai", "Ivy Tien", "Jeffrey Hsiao", "JESSICA WANG", "Lu Lee", "Melody Chen", "MICHELLE LIN", "MINNIE WEN", "MOLLY YANG", "OPHLIA TSAI", "Peter Chen", "Sandy Yen", "Sherry Hsu", "VANESSA HAN", "YI CHANG", "ZOE HO"],
+            supplier: ["ARCHTEXTILE", "AWELL(井澤)", "BAOGANG(寶港)", "DAR HER(達和)", "DELICACY(得力)", "DYS(東亦盛)", "ECOLOT(聚益)", "FAR EAST(遠東)", "FLOURISH(全穎)", "GLOBAL INTERNATIONAL", "GLOBEX", "GOLDEN HORIZON(廣東壕鑫)", "Great Asiatex Co., Ltd(亞太)", "GTGH(國泰國華)", "Haining junrui textile Co.,Ltd(海寧駿銳)", "HANGZHOU TIANRUI(杭州天瑞)", "HANGZHOU XINSHENG TEX(杭州新生)", "HAOBAO(豪寶)", "HONG GANG(宏港)", "HUGE BAMBOO(巨竹)", "JIANGSU GTIG HUBO(江蘇漢帛)", "JINTEX", "JINXU(江蘇金旭)", "JOY TEXTILES(喬英)", "LUCKY UNIQUE", "MEN CHUEN(綿春)", "NAMTEX(南方)", "NEW WIDE(旭寬)", "NICE DYEING(德永佳)", "PACIFIC(互太)", "PARADISE", "PROJEC TEX(紡新)", "RONGLI(榮利)", "SAINT YEAR(三元)", "SKY TEAM(竑昌興業)", "SYNCRETISM TRADE(合一貿易)", "TEXTILE TECH(昌鴻)", "TOP FORM(錦群)", "TZAY KUEN(載坤)", "UNITEDTEX", "VICTORY CITY(冠華)", "WIT-FIT(千邑)", "YAYUN(雅云)", "YI TENG(翊騰)", "YIDIAN(億典)", "YIN-LIH(贏利蕾絲)", "YUYUANG(裕源)", "ZHONGTE(中汽)", "吳江景鴻", "享和", "金霖", "億點", "頡鴻", "穎帛"],
+            category: ["KNIT", "WOVEN"],
+            knitFabric: ["Bonded", "BONDING", "CHENILLE", "Collar", "Crepe", "Crepe-Trim", "CRINKLE", "Crochet", "Dazzle", "Dazzle(reverse)", "Dobby", "Double Knit", "Double Pique", "Embossed Dazzle", "FAUX LEATHER", "Flannel", "FLATBACK RIB", "Fleece", "FLEECE-BACK", "FLEECE-FACE", "French Terry", "Herringbone", "Hole Mesh", "Interlock", "ITY JERSEY", "JACQUARD", "Jersey", "Jersey-trim", "LACE", "LACE-trim", "LAWN", "linear dazzle", "Mesh", "Mesh Fleece", "Mesh-trim", "MICRO FLEECE", "MICRO JERSEY", "mini mesh", "Mink Fleece", "MIRCO FLEECE", "Modal Jresey", "Modal Rib", "Ottoman", "Pique", "pique mesh", "Plain", "Plush Terry", "Ponte", "POPLIN", "Quilted", "Rib", "RIB-TRIM", "Satin", "Scuba", "Sherpa", "shiny mesh", "Slub Jersey", "Slub Terry", "specialty Jersey", "suede", "sweater knit", "Terry", "Texture", "Texture Dazzle", "Texture Fleece", "Texture Mesh", "Thermal", "Tricot", "Tricot Brush", "Tricot-trim", "TWILL", "Velour", "Velour-Trim", "Waffle", "Yoko"],
+            wovenFabric: ["Arrow Mesh", "CANVAS", "Chambray", "Chiffon", "Clips", "Crepe", "Crepe-Trim", "CRINKLE", "Denim", "Dobby", "Double weave", "DOUBLE WOVEN", "Embroidery", "Flannel", "Gauze", "Georgette", "Herringbone", "HOUNDSTOOTH", "Interlock", "Jacquard", "JERSEY", "Lawn", "Linen", "Oxford", "Plain", "PLAIN-TRIM", "Pongee", "PONGEE-TRIM", "Poplin", "Poplin-TRIM", "Pucker", "RIB", "Ribstop", "Ribstop-trim", "Satin", "SEERSUCKER", "Sheeting", "Sherpa", "SUEDE", "Taffeta", "TRICOT", "Twill", "Twill-Trim", "Velvet", "Voile", "WOVEN", "Yoryu"],
+            dyeMethod: ["DYED", "PRT", "Y/D", "Y/D+PRT"],
+            remarks: [],
+            qaName: ["Amber", "Asther", "Rick", "Vicky"]
+        };
+
+        console.log('[INIT] dropdownData initialized:', dropdownData);
+        console.log('[INIT] category:', dropdownData.category);
+        console.log('[INIT] dyeMethod:', dropdownData.dyeMethod);
+
+        async function loadDropdownData() {}
+
+        function renderDropdownTable() {
+            // 清除 localStorage 中可能被截斷的值，重新使用硬編碼的完整值
+            localStorage.removeItem('dropdownData');
+            console.log('🧹 已清除 localStorage 中的舊資料');
+
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('dropdownTableBody');
+
+            if (!tableHead || !tableBody) return;
+
+            // 渲染表頭
+            tableHead.innerHTML = DROPDOWN_FIELDS.map(field => {
+                return `<th>${field.label}</th>`;
+            }).join('');
+
+            // 找出最大行數
+            const maxRows = Math.max(...DROPDOWN_FIELDS.map(f => (dropdownData[f.key] || []).length), 0);
+
+            // 如果沒有資料，至少顯示 5 個空行
+            const rowsToShow = maxRows === 0 ? 5 : maxRows;
+
+            // 渲染表格行
+            tableBody.innerHTML = Array.from({ length: rowsToShow }, (_, rowIndex) => {
+                return `<tr>
+                    ${DROPDOWN_FIELDS.map(field => {
+                        const value = (dropdownData[field.key] || [])[rowIndex] || '';
+                        const options = dropdownData[field.key] || [];
+
+                        // 為每個欄位生成 select 選項
+                        const optionsHtml = options.map(opt =>
+                            `<option value="${opt.replace(/"/g, '&quot;')}" ${opt === value ? 'selected' : ''}>${opt}</option>`
+                        ).join('');
+
+                        return `<td>
+                            <div class="cell-content">
+                                <select data-field="${field.key}" data-row="${rowIndex}" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="">-- 請選擇 --</option>
+                                    ${optionsHtml}
+                                </select>
+                                ${value ? `<button type="button" class="btn-cell-delete" onclick="deleteDropdownCell('${field.key}', ${rowIndex})" title="刪除此值">✕</button>` : ''}
+                            </div>
+                        </td>`;
+                    }).join('')}
+                </tr>`;
+            }).join('');
+
+            // 為所有 select 添加 change 事件自動保存
+            tableBody.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', () => {
+                    autoSaveField(select.dataset.field);
+                });
+            });
+        }
+
+        function addDropdownRow() {
+            // 為所有欄位添加一個空值
+            DROPDOWN_FIELDS.forEach(field => {
+                if (!dropdownData[field.key]) {
+                    dropdownData[field.key] = [];
+                }
+                dropdownData[field.key].push('');
+            });
+            renderDropdownTable();
+        }
+
+        function deleteDropdownCell(field, rowIndex) {
+            if (dropdownData[field] && rowIndex < dropdownData[field].length) {
+                dropdownData[field].splice(rowIndex, 1);
+                renderDropdownTable();
+                autoSaveField(field);
+            }
+        }
+
+        async function autoSaveField(field) {
+            try {
+                // 查找 select 或 input（select 現在用於下拉選單表格）
+                const selects = document.querySelectorAll(`select[data-field="${field}"]`);
+                const inputs = document.querySelectorAll(`input[data-field="${field}"]`);
+
+                let values = [];
+                // 從 select 中提取值
+                selects.forEach(select => {
+                    if (select.value) values.push(select.value.trim());
+                });
+                // 從 input 中提取值（向後相容）
+                inputs.forEach(input => {
+                    if (input.value) values.push(input.value.trim());
+                });
+                values = values.filter(v => v);
+
+                // 已禁用 localStorage，使用硬編碼的完整值
+                dropdownData[field] = values;
+                // localStorage.setItem('dropdownData', JSON.stringify(dropdownData));
+
+                console.log(`✅ 已保存 ${field}:`, values);
+
+                // 重新加載表單中的下拉選單
+                loadDropdownValues();
+                if (field === 'knitFabric' || field === 'wovenFabric') {
+                    loadProductNames();
+                }
+            } catch (error) {
+                console.error('自動保存失敗:', error);
+            }
+        }
+
+        async function saveAllDropdowns() {
+            try {
+                // 收集所有編輯過的值（支援 select 和 input）
+                DROPDOWN_FIELDS.forEach(field => {
+                    const selects = document.querySelectorAll(`select[data-field="${field.key}"]`);
+                    const inputs = document.querySelectorAll(`input[data-field="${field.key}"]`);
+
+                    let values = [];
+                    // 從 select 中提取值
+                    selects.forEach(select => {
+                        if (select.value) values.push(select.value.trim());
+                    });
+                    // 從 input 中提取值（向後相容）
+                    inputs.forEach(input => {
+                        if (input.value) values.push(input.value.trim());
+                    });
+                    values = values.filter(v => v);
+                    dropdownData[field.key] = values;
+                });
+
+                // 已禁用 localStorage，使用硬編碼的完整值
+                // localStorage.setItem('dropdownData', JSON.stringify(dropdownData));
+
+                showAlert('✅ 所有下拉選單已保存！', 'success');
+
+                // 重新加載所有下拉選單
+                loadDropdownValues();
+                loadProductNames();
+                renderDropdownTable();
+            } catch (error) {
+                showAlert('保存失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 品項改變時動態更新布種
+        // ========== 初始化 ==========
+        async function initializeApp() {
+            // 檢查上次保存的檔案信息
+            const lastFileName = localStorage.getItem('lastFileName');
+            const lastRecordCount = localStorage.getItem('lastRecordCount');
+            const lastFileSize = localStorage.getItem('lastFileSize');
+            const lastFileModTime = localStorage.getItem('lastFileModTime');
+            const statusDiv = document.getElementById('fileImportStatus');
+
+            if (lastFileName && statusDiv) {
+                // 顯示上次的檔案信息和快速重載提示
+                const recordText = lastRecordCount ? `共 ${lastRecordCount} 筆記錄` : '';
+                const autoLoadMsg = lastFileSize ? `<br/><small style="color: #2980b9;">💡 檔案大小: ${Math.round(lastFileSize / 1024)} KB</small>` : '';
+                statusDiv.innerHTML = `<span style="color: #27ae60; font-weight: bold;">✅ ${lastFileName}</span><br/><small style="color: #999;">${recordText}</small>${autoLoadMsg}<br/><small style="color: #e74c3c;">⚠️ 如果檔案已改動，請重新選擇</small>`;
+                console.log(`📂 上次使用的檔案：${lastFileName} (大小: ${lastFileSize}, 修改時間: ${lastFileModTime})`);
+            } else {
+                console.log('✅ 應用初始化完成，請使用「選擇工作簿」按鈕選擇 Excel 檔案');
+            }
+
+            // 從 localStorage 恢復下拉選單資料
+            // ✅ 修復：不從 localStorage 恢復，使用硬編碼的完整值
+            console.log('✅ 使用硬編碼的 dropdownData 完整值');
+
+            // 添加檔案選擇按鈕事件監聽（備用）
+            const btnFileImport = document.getElementById('btnFileImport');
+            if (btnFileImport) {
+                btnFileImport.addEventListener('click', selectFile);
+            }
+
+            loadProductNames();
+            loadDropdownValues();
+            loadDropdownData().then(() => {
+                // 在 dropdownData 加載完成後再添加事件監聽
+                document.querySelector('select[name="category"]').addEventListener('change', (e) => {
+                    const category = e.target.value;
+                    const datalist = document.getElementById('productNameList');
+                    datalist.innerHTML = '';
+
+                    if (category === 'KNIT') {
+                        const knitFabrics = dropdownData.knitFabric || [];
+                        knitFabrics.forEach(fabric => {
+                            if (fabric && fabric.trim()) {
+                                const option = document.createElement('option');
+                                option.value = fabric;
+                                datalist.appendChild(option);
+                            }
+                        });
+                    } else if (category === 'WOVEN') {
+                        const wovenFabrics = dropdownData.wovenFabric || [];
+                        wovenFabrics.forEach(fabric => {
+                            if (fabric && fabric.trim()) {
+                                const option = document.createElement('option');
+                                option.value = fabric;
+                                datalist.appendChild(option);
+                            }
+                        });
+                    }
+                });
+            });
+
+            // 初始化按鈕狀態
+            updateSubmitButtons();
+        }
+
+        // 頁面載入時初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>

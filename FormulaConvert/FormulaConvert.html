@@ -1,0 +1,1676 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormulaConvert - 單位換算工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 8px 8px 8px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .converter-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .converter-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+                .converter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .converter-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 5px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="number"]::placeholder {
+            color: #bbb;
+        }
+
+        input[type="number"]:read-only {
+            background-color: #f0f0f0;
+            color: #000;
+            cursor: not-allowed;
+            border-color: #d0d0d0;
+        }
+
+        input[type="number"]:read-only:focus {
+            border-color: #d0d0d0;
+            box-shadow: none;
+        }
+
+        .unit-label {
+            padding: 10px 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-display {
+            padding: 10px 12px;
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0066cc;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .result-display.empty {
+            background: #f5f5f5;
+            border-color: #e0e0e0;
+            color: #0066cc;
+        }
+
+
+        input[type="number"] {
+            background-color: #fffacd !important;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+        table input[type="number"] {
+            background-color: #fffacd !important;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+        table th {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        table td {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+        }
+
+        table input[type="number"] {
+            font-family: 'Courier New', monospace !important;
+            font-size: 14px !important;
+            color: #333 !important;
+        }
+
+        table .result-display {
+            background-color: #f0f0f0 !important;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #000;
+            font-weight: 600;
+            border: none !important;
+        }
+
+        .arrow {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            padding: 0 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-clear:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-export {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #0097bc;
+            padding: 12px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #0097bc;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .converter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-button {
+                min-width: 120px;
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 FormulaConvert</h1>
+            <p>紡織品單位換算計算器 v1.0</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab(event, 'page1')">頁面1 - 基礎換算</button>
+            <button class="tab-button" onclick="switchTab(event, 'page2')">頁面2 - 布料計算</button>
+        </div>
+
+        <!-- Page 1 -->
+        <div id="page1" class="tab-content active">
+            <div class="info-box">
+                💡 輸入數值自動計算轉換結果。清空輸入框結果會自動清除。
+            </div>
+
+            <!-- 重量換算 -->
+            <div class="converter-section">
+                <div class="section-title">重量換算</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>公斤 (KG)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b5" placeholder="輸入 KG" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>磅 (LB)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="c5">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>磅 (LB)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="d5" placeholder="輸入 LB" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>公斤 (KG)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e5">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 長度換算 -->
+            <div class="converter-section">
+                <div class="section-title">長度換算</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>碼 (YARDS)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b8" placeholder="輸入 YD" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>公尺 (METERS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="c8">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>公尺 (METERS)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="d8" placeholder="輸入 M" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>碼 (YARDS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e8">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 單位金額換算 (第一組) -->
+            <div class="converter-section">
+                <div class="section-title">單位金額換算 ($/KG 基準)</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>價格 ($/KG)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b11" placeholder="輸入 $/KG" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>轉換為 $/LB</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="d11">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>碼重 (GM/YD)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c11" placeholder="輸入 GM/YD" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>轉換為 $/YD</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e11">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 單位金額換算 (第二組) -->
+            <div class="converter-section">
+                <div class="section-title">單位金額換算 ($/LB 基準)</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>價格 ($/LB)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b14" placeholder="輸入 $/LB" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>轉換為 $/KG</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="d14">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>碼重 (GM/YD)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c14" placeholder="輸入 GM/YD" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>轉換為 $/YD</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e14">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 材積換算 -->
+            <div class="converter-section">
+                <div class="section-title">材積換算</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>立方呎 (Cubic Feet)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b17" placeholder="輸入 CUFT" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>立方公尺 (Cubic METERS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="c17">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>立方公尺 (Cubic METERS)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="d17" placeholder="輸入 CBM" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>立方呎 (Cubic Feet)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e17">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 瑕疵平均扣點數計算 -->
+            <div class="converter-section">
+                <div class="section-title">瑕疵平均扣點數計算</div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>瑕疵點數 (POINTS)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="b20" placeholder="輸入瑕疵點" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>抽驗碼數 (YARDS)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="d20" placeholder="輸入碼數" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>百碼扣點 (POINTS/100 L.YDS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="e20">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>有效幅寬 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c20" placeholder="輸入有效寬度" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>百平方碼扣點 (POINTS/100 SQ. YDS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="f20">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-clear" onclick="clearPage1()">清空所有</button>
+                <button class="btn-export" onclick="exportData()">📥 下載數據</button>
+            </div>
+        </div>
+
+        <div id="page2" class="tab-content">
+            <!-- 紗支數/丹尼數換算 -->
+            <div class="converter-section">
+                <div class="section-title">紗支數/丹尼數換算</div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>紗支 (S)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2b5" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>丹尼 (D)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2c5">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>丹尼 (D)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2d5" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>紗支 (S)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2e5">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 基重換算 -->
+            <div class="converter-section">
+                <div class="section-title">基重換算</div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw1_gsm" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw1_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>碼重 (G/YD)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw1_gyd">-</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>盎司重 (OZ/YD²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw1_ozsy">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>碼重 (G/YD)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw2_gyd" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw2_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw2_gsm">-</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>盎司重 (OZ/YD²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw2_ozsy">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>盎司重 (OZ/YD²)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw3_ozsy" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2bw3_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>碼重 (G/YD)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw3_gyd">-</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2bw3_gsm">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 針織布重量/長度換算 -->
+            <div class="converter-section">
+                <div class="section-title">針織布重量/長度換算</div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>公斤 (kgs)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit1_kg" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit1_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit1_gsm" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>碼長 (YDS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2kit1_yds">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>英鎊 (lbs)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit2_lbs" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit2_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit2_gsm" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>碼長 (YDS)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2kit2_yds">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>碼長 (yds)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit3_yds" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>全幅 (INCH)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit3_width" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2kit3_gsm" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>公斤 (kgs)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2kit3_kg">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 平織布克重推算 -->
+            <div class="converter-section">
+                <div class="section-title">平織布克重推算</div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>經密</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2b26" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>緯密</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2c26" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>經紗支數 (S)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2d26" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>緯紗支數 (S)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2e26" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2g26">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group">
+                        <label>經密</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2b29" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>緯密</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2c29" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>經紗丹尼數 (D)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2d29" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>緯紗丹尼數 (D)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="p2e29" placeholder="輸入" step="0.01">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>克重 (G/M²)</label>
+                        <div class="input-wrapper">
+                            <div class="result-display empty" id="p2g29">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 針織布規格推算 (圓編Jersey) -->
+            <div class="converter-section">
+                <div class="section-title">針織布規格推算 (圓編Jersey)</div>
+                <div class="converter-row">
+                    <div class="input-group"><label>成品全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j1b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>成品針密</label><div class="input-wrapper"><input type="number" id="p2j1c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>織機直徑 (inch)</label><div class="input-wrapper"><input type="number" id="p2j1d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>織機針密</label><div class="input-wrapper"><div class="result-display empty" id="p2j1e">-</div></div></div>
+                    <div class="input-group"></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>成品全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j2b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>成品針密</label><div class="input-wrapper"><input type="number" id="p2j2c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>織機針密</label><div class="input-wrapper"><input type="number" id="p2j2d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>織機直徑 (inch)</label><div class="input-wrapper"><div class="result-display empty" id="p2j2e">-</div></div></div>
+                    <div class="input-group"></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j3b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>紗口數</label><div class="input-wrapper"><input type="number" id="p2j3c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>緯紗支數 (S)</label><div class="input-wrapper"><input type="number" id="p2j3d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2j3e">-</div></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><div class="result-display empty" id="p2j3f">-</div></div></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j4b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>紗口數</label><div class="input-wrapper"><input type="number" id="p2j4c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>緯紗丹尼數 (D)</label><div class="input-wrapper"><input type="number" id="p2j4d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2j4e">-</div></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><div class="result-display empty" id="p2j4f">-</div></div></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j5b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><input type="number" id="p2j5c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>緯紗支數 (S)</label><div class="input-wrapper"><input type="number" id="p2j5d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2j5e">-</div></div></div>
+                    <div class="input-group"><label>紗口數</label><div class="input-wrapper"><div class="result-display empty" id="p2j5f">-</div></div></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2j6b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><input type="number" id="p2j6c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>緯紗丹尼數 (D)</label><div class="input-wrapper"><input type="number" id="p2j6d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2j6e">-</div></div></div>
+                    <div class="input-group"><label>紗口數</label><div class="input-wrapper"><div class="result-display empty" id="p2j6f">-</div></div></div>
+                </div>
+            </div>
+
+            <!-- 針織布規格推算 (經編) -->
+            <div class="converter-section">
+                <div class="section-title">針織布規格推算 (經編)</div>
+                <div class="converter-row">
+                    <div class="input-group"><label>成品全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2kc1b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>成品針密</label><div class="input-wrapper"><input type="number" id="p2kc1c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>經紗支數 (S)</label><div class="input-wrapper"><input type="number" id="p2kc1d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2kc1e">-</div></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><div class="result-display empty" id="p2kc1f">-</div></div></div>
+                </div>
+                <div class="converter-row">
+                    <div class="input-group"><label>成品全幅 (inch)</label><div class="input-wrapper"><input type="number" id="p2kc2b" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>成品針密</label><div class="input-wrapper"><input type="number" id="p2kc2c" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>經紗丹尼數 (D)</label><div class="input-wrapper"><input type="number" id="p2kc2d" placeholder="輸入" step="0.01"></div></div>
+                    <div class="input-group"><label>碼重 (g/yd)</label><div class="input-wrapper"><div class="result-display empty" id="p2kc2e">-</div></div></div>
+                    <div class="input-group"><label>克重 (g/m²)</label><div class="input-wrapper"><div class="result-display empty" id="p2kc2f">-</div></div></div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-clear" onclick="clearPage2()">清空所有</button>
+                <button class="btn-export" onclick="exportData()">📥 下載數據</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 數值計算函數
+        const CONSTANTS = {
+            KG_TO_LB: 1 / 0.4535924,
+            LB_TO_KG: 0.4535924,
+            YD_TO_M: 0.9144,
+            M_TO_YD: 1 / 0.9144,
+            CUFT_TO_CBM: 0.0283168,
+            CBM_TO_CUFT: 1 / 0.0283168
+        };
+
+        // 監聽 Page 1 的輸入
+        function setupPage1Listeners() {
+            // 重量換算
+            document.getElementById('b5').addEventListener('input', calculateWeight);
+            document.getElementById('d5').addEventListener('input', calculateWeight);
+
+            // 長度換算
+            document.getElementById('b8').addEventListener('input', calculateLength);
+            document.getElementById('d8').addEventListener('input', calculateLength);
+
+            // 單位金額換算
+            document.getElementById('b11').addEventListener('input', calculatePrice1);
+            document.getElementById('c11').addEventListener('input', calculatePrice1);
+            document.getElementById('b14').addEventListener('input', calculatePrice2);
+            document.getElementById('c14').addEventListener('input', calculatePrice2);
+
+            // 材積換算
+            document.getElementById('b17').addEventListener('input', calculateVolume);
+            document.getElementById('d17').addEventListener('input', calculateVolume);
+
+            // 瑕疵計算
+            document.getElementById('b20').addEventListener('input', calculateDefects);
+            document.getElementById('c20').addEventListener('input', calculateDefects);
+            document.getElementById('d20').addEventListener('input', calculateDefects);
+        }
+
+        function calculateWeight() {
+            const b5 = parseFloat(document.getElementById('b5').value) || 0;
+            const d5 = parseFloat(document.getElementById('d5').value) || 0;
+
+            if (b5 > 0) {
+                const result = (b5 * CONSTANTS.KG_TO_LB).toFixed(1);
+                updateDisplay('c5', result);
+            } else {
+                updateDisplay('c5', '');
+            }
+
+            if (d5 > 0) {
+                const result = (d5 * CONSTANTS.LB_TO_KG).toFixed(1);
+                updateDisplay('e5', result);
+            } else {
+                updateDisplay('e5', '');
+            }
+        }
+
+        function calculateLength() {
+            const b8 = parseFloat(document.getElementById('b8').value) || 0;
+            const d8 = parseFloat(document.getElementById('d8').value) || 0;
+
+            if (b8 > 0) {
+                const result = (b8 * CONSTANTS.YD_TO_M).toFixed(1);
+                updateDisplay('c8', result);
+            } else {
+                updateDisplay('c8', '');
+            }
+
+            if (d8 > 0) {
+                const result = (d8 * CONSTANTS.M_TO_YD).toFixed(1);
+                updateDisplay('e8', result);
+            } else {
+                updateDisplay('e8', '');
+            }
+        }
+
+        function calculatePrice1() {
+            const b11 = parseFloat(document.getElementById('b11').value) || 0;
+            const c11 = parseFloat(document.getElementById('c11').value) || 0;
+
+            // $/KG -> $/LB
+            if (b11 > 0) {
+                const result = (b11 * CONSTANTS.LB_TO_KG).toFixed(1);
+                updateDisplay('d11', result);
+            } else {
+                updateDisplay('d11', '');
+            }
+
+            // $/KG -> $/YD
+            if (b11 > 0 && c11 > 0) {
+                const result = (b11 / (1000 / c11)).toFixed(1);
+                updateDisplay('e11', result);
+            } else {
+                updateDisplay('e11', '');
+            }
+        }
+
+        function calculatePrice2() {
+            const b14 = parseFloat(document.getElementById('b14').value) || 0;
+            const c14 = parseFloat(document.getElementById('c14').value) || 0;
+
+            // $/LB -> $/KG
+            if (b14 > 0) {
+                const result = (b14 / CONSTANTS.LB_TO_KG).toFixed(1);
+                updateDisplay('d14', result);
+            } else {
+                updateDisplay('d14', '');
+            }
+
+            // $/LB -> $/YD
+            if (b14 > 0 && c14 > 0) {
+                const result = (b14 / CONSTANTS.LB_TO_KG / (1000 / c14)).toFixed(1);
+                updateDisplay('e14', result);
+            } else {
+                updateDisplay('e14', '');
+            }
+        }
+
+        function calculateVolume() {
+            const b17 = parseFloat(document.getElementById('b17').value) || 0;
+            const d17 = parseFloat(document.getElementById('d17').value) || 0;
+
+            if (b17 > 0) {
+                const result = (b17 * CONSTANTS.CUFT_TO_CBM).toFixed(1);
+                updateDisplay('c17', result);
+            } else {
+                updateDisplay('c17', '');
+            }
+
+            if (d17 > 0) {
+                const result = (d17 * CONSTANTS.CBM_TO_CUFT).toFixed(1);
+                updateDisplay('e17', result);
+            } else {
+                updateDisplay('e17', '');
+            }
+        }
+
+        function calculateDefects() {
+            const b20 = parseFloat(document.getElementById('b20').value) || 0;
+            const c20 = parseFloat(document.getElementById('c20').value) || 0;
+            const d20 = parseFloat(document.getElementById('d20').value) || 0;
+
+            // 100 l.yds
+            if (b20 > 0 && d20 > 0) {
+                const result = (b20 / d20 * 100).toFixed(1);
+                updateDisplay('e20', result);
+            } else {
+                updateDisplay('e20', '');
+            }
+
+            // 100 SQ.yds
+            if (b20 > 0 && c20 > 0 && d20 > 0) {
+                const result = (b20 * 3600 / c20 / d20).toFixed(1);
+                updateDisplay('f20', result);
+            } else {
+                updateDisplay('f20', '');
+            }
+        }
+
+        function updateDisplay(id, value) {
+            const elem = document.getElementById(id);
+            if (value === '') {
+                elem.textContent = '-';
+                elem.classList.add('empty');
+            } else {
+                elem.textContent = value;
+                elem.classList.remove('empty');
+            }
+        }
+
+        function clearPage1() {
+            const inputs = document.querySelectorAll('#page1 input[type="number"]');
+            inputs.forEach(input => input.value = '');
+            document.querySelectorAll('#page1 .result-display').forEach(elem => {
+                elem.textContent = '-';
+                elem.classList.add('empty');
+            });
+        }
+
+        function switchTab(event, tabId) {
+            // 隱藏所有 tab 內容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 移除所有按鈕的 active 類
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 顯示選中的 tab
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toLocaleString('zh-TW'),
+                page1: {
+                    weight: {
+                        kg_to_lb: document.getElementById('b5').value ? `${document.getElementById('b5').value} KG = ${document.getElementById('c5').textContent} LB` : 'N/A',
+                        lb_to_kg: document.getElementById('d5').value ? `${document.getElementById('d5').value} LB = ${document.getElementById('e5').textContent} KG` : 'N/A'
+                    },
+                    length: {
+                        yd_to_m: document.getElementById('b8').value ? `${document.getElementById('b8').value} YD = ${document.getElementById('c8').textContent} M` : 'N/A',
+                        m_to_yd: document.getElementById('d8').value ? `${document.getElementById('d8').value} M = ${document.getElementById('e8').textContent} YD` : 'N/A'
+                    }
+                }
+            };
+
+            const csv = `FormulaConvert - 計算紀錄\n匯出時間: ${data.timestamp}\n\n重量換算\nKG -> LB: ${data.page1.weight.kg_to_lb}\nLB -> KG: ${data.page1.weight.lb_to_kg}\n\n長度換算\nYD -> M: ${data.page1.length.yd_to_m}\nM -> YD: ${data.page1.length.m_to_yd}`;
+
+            const BOM = '﻿';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FormulaConvert_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        }
+
+        // Page 2 常數
+        const P2_CONSTANTS = {
+            LBS_PER_KG: 0.4535924,
+            GRAMS_PER_OZ: 28.3495231,
+            CONVERSION_0232257: 0.0232257,
+            YARDS_TO_METER: 0.9144
+        };
+
+        // 設置 Page 2 監聽
+        // 針織布規格推算函數
+        function calculateJerseyJ1() {
+            const b = parseFloat(document.getElementById('p2j1b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j1c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j1d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (b * c / d / 3.14159).toFixed(1);
+                document.getElementById('p2j1e').textContent = e;
+            } else {
+                document.getElementById('p2j1e').textContent = '-';
+            }
+        }
+
+        function calculateJerseyJ2() {
+            const b = parseFloat(document.getElementById('p2j2b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j2c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j2d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (b * c / d / 3.14159).toFixed(1);
+                document.getElementById('p2j2e').textContent = e;
+            } else {
+                document.getElementById('p2j2e').textContent = '-';
+            }
+        }
+
+        function calculateJerseyJ3() {
+            const b = parseFloat(document.getElementById('p2j3b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j3c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j3d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (1 * 36 * c * b / 36 / 840 / d * 0.4535924 * 1000 * 10).toFixed(1);
+                const f = (parseFloat(e) / b / 0.0232257).toFixed(1);
+                document.getElementById('p2j3e').textContent = e;
+                document.getElementById('p2j3f').textContent = f;
+            } else {
+                document.getElementById('p2j3e').textContent = '-';
+                document.getElementById('p2j3f').textContent = '-';
+            }
+        }
+
+        function calculateJerseyJ4() {
+            const b = parseFloat(document.getElementById('p2j4b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j4c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j4d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (1 * 36 * c * b / 36 * 0.9144 / 9000 * d * 10).toFixed(1);
+                const f = (parseFloat(e) / b / 0.0232257).toFixed(1);
+                document.getElementById('p2j4e').textContent = e;
+                document.getElementById('p2j4f').textContent = f;
+            } else {
+                document.getElementById('p2j4e').textContent = '-';
+                document.getElementById('p2j4f').textContent = '-';
+            }
+        }
+
+        function calculateJerseyJ5() {
+            const b = parseFloat(document.getElementById('p2j5b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j5c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j5d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (c * b * 0.0232257 * 10).toFixed(1);
+                const f = (parseFloat(e) / 1000 / 0.4535924 * d * 840 * 36 / b / 36).toFixed(1);
+                document.getElementById('p2j5e').textContent = e;
+                document.getElementById('p2j5f').textContent = f;
+            } else {
+                document.getElementById('p2j5e').textContent = '-';
+                document.getElementById('p2j5f').textContent = '-';
+            }
+        }
+
+        function calculateJerseyJ6() {
+            const b = parseFloat(document.getElementById('p2j6b').value) || 0;
+            const c = parseFloat(document.getElementById('p2j6c').value) || 0;
+            const d = parseFloat(document.getElementById('p2j6d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (c * b * 0.0232257 * 10).toFixed(1);
+                const f = (parseFloat(e) / d * 9000 / 0.9144 * 36 / b / 36).toFixed(1);
+                document.getElementById('p2j6e').textContent = e;
+                document.getElementById('p2j6f').textContent = f;
+            } else {
+                document.getElementById('p2j6e').textContent = '-';
+                document.getElementById('p2j6f').textContent = '-';
+            }
+        }
+
+        function calculateKcaS() {
+            const b = parseFloat(document.getElementById('p2kc1b').value) || 0;
+            const c = parseFloat(document.getElementById('p2kc1c').value) || 0;
+            const d = parseFloat(document.getElementById('p2kc1d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (b * c / 840 / d * 0.4535924 * 1000 * 10).toFixed(1);
+                const f = (parseFloat(e) / b / 0.0232257).toFixed(1);
+                document.getElementById('p2kc1e').textContent = e;
+                document.getElementById('p2kc1f').textContent = f;
+            } else {
+                document.getElementById('p2kc1e').textContent = '-';
+                document.getElementById('p2kc1f').textContent = '-';
+            }
+        }
+
+        function calculateKcaD() {
+            const b = parseFloat(document.getElementById('p2kc2b').value) || 0;
+            const c = parseFloat(document.getElementById('p2kc2c').value) || 0;
+            const d = parseFloat(document.getElementById('p2kc2d').value) || 0;
+            if (b > 0 && c > 0 && d > 0) {
+                const e = (b * c * 0.9144 / 9000 * d * 10).toFixed(1);
+                const f = (parseFloat(e) / b / 0.0232257).toFixed(1);
+                document.getElementById('p2kc2e').textContent = e;
+                document.getElementById('p2kc2f').textContent = f;
+            } else {
+                document.getElementById('p2kc2e').textContent = '-';
+                document.getElementById('p2kc2f').textContent = '-';
+            }
+        }
+
+        function setupPage2Listeners() {
+            // Helper function to safely add listener
+            function addListener(elementId, callback) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.addEventListener('input', callback);
+                }
+            }
+
+            // 紗支數/丹尼數換算
+            addListener('p2b5', calculateYarnCount);
+            addListener('p2d5', calculateYarnCount);
+
+            // 基重換算 - Row 1 (G/SM input)
+            addListener('p2bw1_gsm', () => calculateBasisWeight('row1'));
+            addListener('p2bw1_width', () => calculateBasisWeight('row1'));
+
+            // 基重換算 - Row 2 (G/YD input)
+            addListener('p2bw2_gyd', () => calculateBasisWeight('row2'));
+            addListener('p2bw2_width', () => calculateBasisWeight('row2'));
+
+            // 基重換算 - Row 3 (OZ/SY input)
+            addListener('p2bw3_ozsy', () => calculateBasisWeight('row3'));
+            addListener('p2bw3_width', () => calculateBasisWeight('row3'));
+
+            // 針織布重量/長度換算 (新版本)
+            addListener('p2kit1_kg', () => calculateKnitLength('kit1'));
+            addListener('p2kit1_width', () => calculateKnitLength('kit1'));
+            addListener('p2kit1_gsm', () => calculateKnitLength('kit1'));
+
+            addListener('p2kit2_lbs', () => calculateKnitLength('kit2'));
+            addListener('p2kit2_width', () => calculateKnitLength('kit2'));
+            addListener('p2kit2_gsm', () => calculateKnitLength('kit2'));
+
+            addListener('p2kit3_yds', () => calculateKnitLength('kit3'));
+            addListener('p2kit3_width', () => calculateKnitLength('kit3'));
+            addListener('p2kit3_gsm', () => calculateKnitLength('kit3'));
+
+            // 針織布重量/長度
+            addListener('p2b17', calculateKnitWeight1);
+            addListener('p2c17', calculateKnitWeight1);
+            addListener('p2d17', calculateKnitWeight1);
+
+            addListener('p2b20', calculateKnitWeight2);
+            addListener('p2c20', calculateKnitWeight2);
+            addListener('p2d20', calculateKnitWeight2);
+
+            addListener('p2b23', calculateKnitWeight3);
+            addListener('p2c23', calculateKnitWeight3);
+            addListener('p2d23', calculateKnitWeight3);
+
+            // 平織布克重
+            addListener('p2b26', calculateWovenS26);
+            addListener('p2c26', calculateWovenS26);
+            addListener('p2d26', calculateWovenS26);
+            addListener('p2e26', calculateWovenS26);
+
+            addListener('p2b29', calculateWovenD29);
+            addListener('p2c29', calculateWovenD29);
+            addListener('p2d29', calculateWovenD29);
+            addListener('p2e29', calculateWovenD29);
+
+            // 針織布規格推算 (圓編Jersey)
+            addListener('p2j1b', () => calculateJerseyJ1());
+            addListener('p2j1c', () => calculateJerseyJ1());
+            addListener('p2j1d', () => calculateJerseyJ1());
+
+            addListener('p2j2b', () => calculateJerseyJ2());
+            addListener('p2j2c', () => calculateJerseyJ2());
+            addListener('p2j2d', () => calculateJerseyJ2());
+
+            addListener('p2j3b', () => calculateJerseyJ3());
+            addListener('p2j3c', () => calculateJerseyJ3());
+            addListener('p2j3d', () => calculateJerseyJ3());
+
+            addListener('p2j4b', () => calculateJerseyJ4());
+            addListener('p2j4c', () => calculateJerseyJ4());
+            addListener('p2j4d', () => calculateJerseyJ4());
+
+            addListener('p2j5b', () => calculateJerseyJ5());
+            addListener('p2j5c', () => calculateJerseyJ5());
+            addListener('p2j5d', () => calculateJerseyJ5());
+
+            addListener('p2j6b', () => calculateJerseyJ6());
+            addListener('p2j6c', () => calculateJerseyJ6());
+            addListener('p2j6d', () => calculateJerseyJ6());
+
+            // 針織布規格推算 (經編)
+            addListener('p2kc1b', () => calculateKcaS());
+            addListener('p2kc1c', () => calculateKcaS());
+            addListener('p2kc1d', () => calculateKcaS());
+
+            addListener('p2kc2b', () => calculateKcaD());
+            addListener('p2kc2c', () => calculateKcaD());
+            addListener('p2kc2d', () => calculateKcaD());
+        }
+
+        // Page 2 計算函數
+        function calculateYarnCount() {
+            const b5 = parseFloat(document.getElementById('p2b5').value) || 0;
+            const d5 = parseFloat(document.getElementById('p2d5').value) || 0;
+
+            if (b5 > 0) {
+                const result = ((0.4535924 * 1000) / (b5 * 840 * 0.9144 / 9000)).toFixed(1);
+                updateDisplay('p2c5', result);
+            } else {
+                updateDisplay('p2c5', '');
+            }
+
+            if (d5 > 0) {
+                const result = ((9000 / 0.9144 / 840) / (d5 / 1000 / 0.4535924)).toFixed(1);
+                updateDisplay('p2e5', result);
+            } else {
+                updateDisplay('p2e5', '');
+            }
+        }
+
+        function calculateBasisWeight(row) {
+            if (row === 'row1') {
+                const gsm = parseFloat(document.getElementById('p2bw1_gsm').value) || 0;
+                const width = parseFloat(document.getElementById('p2bw1_width').value) || 0;
+
+                if (gsm > 0 && width > 0) {
+                    const gyd = (gsm * 0.0232257 * width).toFixed(1);
+                    const ozsy = (gsm / 28.3495231 * 0.9144 * 0.9144).toFixed(1);
+                    document.getElementById('p2bw1_gyd').textContent = gyd;
+                    document.getElementById('p2bw1_ozsy').textContent = ozsy;
+                } else {
+                    document.getElementById('p2bw1_gyd').textContent = '-';
+                    document.getElementById('p2bw1_ozsy').textContent = '-';
+                }
+            } else if (row === 'row2') {
+                const gyd = parseFloat(document.getElementById('p2bw2_gyd').value) || 0;
+                const width = parseFloat(document.getElementById('p2bw2_width').value) || 0;
+
+                if (gyd > 0 && width > 0) {
+                    const gsm = (gyd / 0.0232257 / width).toFixed(1);
+                    const ozsy = ((gyd / 28.3495231) / (width / 36)).toFixed(1);
+                    document.getElementById('p2bw2_gsm').textContent = gsm;
+                    document.getElementById('p2bw2_ozsy').textContent = ozsy;
+                } else {
+                    document.getElementById('p2bw2_gsm').textContent = '-';
+                    document.getElementById('p2bw2_ozsy').textContent = '-';
+                }
+            } else if (row === 'row3') {
+                const ozsy = parseFloat(document.getElementById('p2bw3_ozsy').value) || 0;
+                const width = parseFloat(document.getElementById('p2bw3_width').value) || 0;
+
+                if (ozsy > 0 && width > 0) {
+                    const gyd = (ozsy * 28.3495231 * (width / 36)).toFixed(1);
+                    const gsm = (ozsy * 28.3495231 / (0.9144 * 0.9144)).toFixed(1);
+                    document.getElementById('p2bw3_gyd').textContent = gyd;
+                    document.getElementById('p2bw3_gsm').textContent = gsm;
+                } else {
+                    document.getElementById('p2bw3_gyd').textContent = '-';
+                    document.getElementById('p2bw3_gsm').textContent = '-';
+                }
+            }
+        }
+
+        function calculateKnitLength(kit) {
+            if (kit === 'kit1') {
+                const kg = parseFloat(document.getElementById('p2kit1_kg').value) || 0;
+                const width = parseFloat(document.getElementById('p2kit1_width').value) || 0;
+                const gsm = parseFloat(document.getElementById('p2kit1_gsm').value) || 0;
+
+                if (kg > 0 && width > 0 && gsm > 0) {
+                    const yds = (kg * 1000 / (gsm * 0.0232257 * width) * 10).toFixed(1);
+                    document.getElementById('p2kit1_yds').textContent = yds;
+                } else {
+                    document.getElementById('p2kit1_yds').textContent = '-';
+                }
+            } else if (kit === 'kit2') {
+                const lbs = parseFloat(document.getElementById('p2kit2_lbs').value) || 0;
+                const width = parseFloat(document.getElementById('p2kit2_width').value) || 0;
+                const gsm = parseFloat(document.getElementById('p2kit2_gsm').value) || 0;
+
+                if (lbs > 0 && width > 0 && gsm > 0) {
+                    const yds = (lbs * 0.4535924 * 1000 / (gsm * 0.0232257 * width) * 10).toFixed(1);
+                    document.getElementById('p2kit2_yds').textContent = yds;
+                } else {
+                    document.getElementById('p2kit2_yds').textContent = '-';
+                }
+            } else if (kit === 'kit3') {
+                const yds = parseFloat(document.getElementById('p2kit3_yds').value) || 0;
+                const width = parseFloat(document.getElementById('p2kit3_width').value) || 0;
+                const gsm = parseFloat(document.getElementById('p2kit3_gsm').value) || 0;
+
+                if (yds > 0 && width > 0 && gsm > 0) {
+                    const kg = (yds * (gsm * 0.0232257 * width) / 1000 / 10).toFixed(1);
+                    document.getElementById('p2kit3_kg').textContent = kg;
+                } else {
+                    document.getElementById('p2kit3_kg').textContent = '-';
+                }
+            }
+        }
+
+        function calculateKnitWeight1() {
+            const b17 = parseFloat(document.getElementById('p2b17').value) || 0;
+            const c17 = parseFloat(document.getElementById('p2c17').value) || 0;
+            const d17 = parseFloat(document.getElementById('p2d17').value) || 0;
+
+            if (b17 > 0 && c17 > 0 && d17 > 0) {
+                const result = (b17 * 1000 / (d17 * 0.0232257 * c17)).toFixed(1);
+                updateDisplay('p2e17', result);
+            } else {
+                updateDisplay('p2e17', '');
+            }
+        }
+
+        function calculateKnitWeight2() {
+            const b20 = parseFloat(document.getElementById('p2b20').value) || 0;
+            const c20 = parseFloat(document.getElementById('p2c20').value) || 0;
+            const d20 = parseFloat(document.getElementById('p2d20').value) || 0;
+
+            if (b20 > 0 && c20 > 0 && d20 > 0) {
+                const result = (b20 * 0.4535924 * 1000 / (d20 * 0.0232257 * c20)).toFixed(1);
+                updateDisplay('p2e20', result);
+            } else {
+                updateDisplay('p2e20', '');
+            }
+        }
+
+        function calculateKnitWeight3() {
+            const b23 = parseFloat(document.getElementById('p2b23').value) || 0;
+            const c23 = parseFloat(document.getElementById('p2c23').value) || 0;
+            const d23 = parseFloat(document.getElementById('p2d23').value) || 0;
+
+            if (b23 > 0 && c23 > 0 && d23 > 0) {
+                const result = (b23 * (d23 * 0.0232257 * c23) / 1000).toFixed(1);
+                updateDisplay('p2e23', result);
+            } else {
+                updateDisplay('p2e23', '');
+            }
+        }
+
+        function calculateWovenS26() {
+            const b26 = parseFloat(document.getElementById('p2b26').value) || 0;
+            const c26 = parseFloat(document.getElementById('p2c26').value) || 0;
+            const d26 = parseFloat(document.getElementById('p2d26').value) || 0;
+            const e26 = parseFloat(document.getElementById('p2e26').value) || 0;
+
+            if (b26 > 0 && c26 > 0 && d26 > 0 && e26 > 0) {
+                const result = ((1 / 0.9144 * 36 * b26 / 0.9144 / 840 / d26 * 0.4535924 * 1000) +
+                               (1 / 0.9144 * 36 * c26 / 0.9144 / 840 / e26 * 0.4535924 * 1000)).toFixed(1);
+                updateDisplay('p2g26', result);
+            } else {
+                updateDisplay('p2g26', '');
+            }
+        }
+
+        function calculateWovenD29() {
+            const b29 = parseFloat(document.getElementById('p2b29').value) || 0;
+            const c29 = parseFloat(document.getElementById('p2c29').value) || 0;
+            const d29 = parseFloat(document.getElementById('p2d29').value) || 0;
+            const e29 = parseFloat(document.getElementById('p2e29').value) || 0;
+
+            if (b29 > 0 && c29 > 0 && d29 > 0 && e29 > 0) {
+                const result = ((1 / 0.9144 * 36 * b29 / 9000 * d29) +
+                               (1 / 0.9144 * 36 * c29 / 9000 * e29)).toFixed(1);
+                updateDisplay('p2g29', result);
+            } else {
+                updateDisplay('p2g29', '');
+            }
+        }
+
+        function calculateCircularNeedleDensity32() {
+            const b32 = parseFloat(document.getElementById('p2b32').value) || 0;
+            const c32 = parseFloat(document.getElementById('p2c32').value) || 0;
+            const d32 = parseFloat(document.getElementById('p2d32').value) || 0;
+
+            if (b32 > 0 && c32 > 0 && d32 > 0) {
+                const result = (b32 * c32 / d32 / 3.14159).toFixed(1);
+                updateDisplay('p2e32', result);
+            } else {
+                updateDisplay('p2e32', '');
+            }
+        }
+
+        function calculateCircularDiameter() {
+            const b35 = parseFloat(document.getElementById('p2b35').value) || 0;
+            const c35 = parseFloat(document.getElementById('p2c35').value) || 0;
+            const d35 = parseFloat(document.getElementById('p2d35').value) || 0;
+
+            if (b35 > 0 && c35 > 0 && d35 > 0) {
+                const result = (b35 * c35 / d35 / 3.14159).toFixed(1);
+                updateDisplay('p2e35', result);
+            } else {
+                updateDisplay('p2e35', '');
+            }
+        }
+
+        function calculateCPIS38() {
+            const b38 = parseFloat(document.getElementById('p2b38').value) || 0;
+            const c38 = parseFloat(document.getElementById('p2c38').value) || 0;
+            const d38 = parseFloat(document.getElementById('p2d38').value) || 0;
+
+            if (b38 > 0 && c38 > 0 && d38 > 0) {
+                const e38 = (1 * 36 * c38 * b38 / 36 / 840 / d38 * 0.4535924 * 1000).toFixed(1);
+                updateDisplay('p2e38', e38);
+                const f38 = (parseFloat(e38) / b38 / 0.0232257).toFixed(1);
+                updateDisplay('p2f38', f38);
+            } else {
+                updateDisplay('p2e38', '');
+                updateDisplay('p2f38', '');
+            }
+        }
+
+        function calculateCPID41() {
+            const b41 = parseFloat(document.getElementById('p2b41').value) || 0;
+            const c41 = parseFloat(document.getElementById('p2c41').value) || 0;
+            const d41 = parseFloat(document.getElementById('p2d41').value) || 0;
+
+            if (b41 > 0 && c41 > 0 && d41 > 0) {
+                const e41 = (1 * 36 * c41 * b41 / 36 * 0.9144 / 9000 * d41).toFixed(1);
+                updateDisplay('p2e41', e41);
+                const f41 = (parseFloat(e41) / b41 / 0.0232257).toFixed(1);
+                updateDisplay('p2f41', f41);
+            } else {
+                updateDisplay('p2e41', '');
+                updateDisplay('p2f41', '');
+            }
+        }
+
+        function calculateGSMS44() {
+            const b44 = parseFloat(document.getElementById('p2b44').value) || 0;
+            const c44 = parseFloat(document.getElementById('p2c44').value) || 0;
+            const d44 = parseFloat(document.getElementById('p2d44').value) || 0;
+
+            if (b44 > 0 && c44 > 0 && d44 > 0) {
+                const e44 = (c44 * b44 * 0.0232257).toFixed(1);
+                updateDisplay('p2e44', e44);
+                const f44 = (parseFloat(e44) / 1000 / 0.4535924 * d44 * 840 * 36 / b44 / 36).toFixed(1);
+                updateDisplay('p2f44', f44);
+            } else {
+                updateDisplay('p2e44', '');
+                updateDisplay('p2f44', '');
+            }
+        }
+
+        function calculateGSMD47() {
+            const b47 = parseFloat(document.getElementById('p2b47').value) || 0;
+            const c47 = parseFloat(document.getElementById('p2c47').value) || 0;
+            const d47 = parseFloat(document.getElementById('p2d47').value) || 0;
+
+            if (b47 > 0 && c47 > 0 && d47 > 0) {
+                const e47 = (c47 * b47 * 0.0232257).toFixed(1);
+                updateDisplay('p2e47', e47);
+                const f47 = (parseFloat(e47) / d47 * 9000 / 0.9144 * 36 / b47 / 36).toFixed(1);
+                updateDisplay('p2f47', f47);
+            } else {
+                updateDisplay('p2e47', '');
+                updateDisplay('p2f47', '');
+            }
+        }
+
+        function calculateWPIS50() {
+            const b50 = parseFloat(document.getElementById('p2b50').value) || 0;
+            const c50 = parseFloat(document.getElementById('p2c50').value) || 0;
+            const d50 = parseFloat(document.getElementById('p2d50').value) || 0;
+
+            if (b50 > 0 && c50 > 0 && d50 > 0) {
+                const e50 = (b50 * c50 / 840 / d50 * 0.4535924 * 1000).toFixed(1);
+                updateDisplay('p2e50', e50);
+                const f50 = (parseFloat(e50) / b50 / 0.0232257).toFixed(1);
+                updateDisplay('p2f50', f50);
+            } else {
+                updateDisplay('p2e50', '');
+                updateDisplay('p2f50', '');
+            }
+        }
+
+        function calculateWPID53() {
+            const b53 = parseFloat(document.getElementById('p2b53').value) || 0;
+            const c53 = parseFloat(document.getElementById('p2c53').value) || 0;
+            const d53 = parseFloat(document.getElementById('p2d53').value) || 0;
+
+            if (b53 > 0 && c53 > 0 && d53 > 0) {
+                const e53 = (b53 * c53 * 0.9144 / 9000 * d53).toFixed(1);
+                updateDisplay('p2e53', e53);
+                const f53 = (parseFloat(e53) / b53 / 0.0232257).toFixed(1);
+                updateDisplay('p2f53', f53);
+            } else {
+                updateDisplay('p2e53', '');
+                updateDisplay('p2f53', '');
+            }
+        }
+
+        function clearPage2() {
+            const inputs = document.querySelectorAll('#page2 input[type="number"]');
+            inputs.forEach(input => input.value = '');
+            document.querySelectorAll('#page2 .result-display').forEach(elem => {
+                elem.textContent = '-';
+                elem.classList.add('empty');
+            });
+        }
+
+        // 初始化
+        setupPage1Listeners();
+        setupPage2Listeners();
+    </script>
+</body>
+</html>

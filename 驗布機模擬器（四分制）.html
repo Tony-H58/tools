@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>驗布機模擬器（四分制）</title>
+<style>
+  :root{--bg:#14171c;--card:#1e232b;--line:#2e3540;--txt:#e7eaef;--mut:#9aa3af;--acc:#38bdf8;--ok:#22c55e;--ng:#ef4444;--warn:#f59e0b}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"PingFang TC","Noto Sans TC",sans-serif;-webkit-tap-highlight-color:transparent}
+  #app{max-width:560px;margin:0 auto;padding:10px 12px 40px}
+  h1{font-size:19px;margin:4px 0 10px}
+  h1 small{font-size:12px;color:var(--mut);font-weight:500;margin-left:6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
+  input,select{width:100%;background:#0f1216;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px;font-size:16px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{flex:1;background:#0f1216;color:var(--mut);border:0;padding:9px 4px;font-size:14px}
+  .seg button.on{background:var(--acc);color:#04202e;font-weight:700}
+  .btn{display:block;width:100%;background:var(--acc);color:#04202e;border:0;border-radius:10px;padding:12px;font-size:16px;font-weight:700}
+  .btn.sec{background:#2a313b;color:var(--txt);font-weight:600}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .rules{font-size:13px;color:var(--mut);line-height:1.65;margin:0;padding-left:18px}
+  .rules b{color:var(--txt)}
+  #stat{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:6px}
+  #stat b{display:block;font-size:20px;color:var(--txt);font-variant-numeric:tabular-nums}
+  canvas{display:block;width:100%;border-radius:10px;touch-action:manipulation}
+  #ctrl{display:flex;gap:8px;margin:8px 0}
+  #ctrl .seg{flex:1.4}
+  #ctrl .btn{padding:9px;font-size:14px;flex:1}
+  #log{max-height:180px;overflow:auto;font-size:13px}
+  #log div{padding:5px 2px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+  #log .y{color:var(--mut);width:56px;flex:none;font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;font-weight:700}
+  .t-ok{background:#14532d;color:#86efac}.t-ng{background:#7f1d1d;color:#fca5a5}.t-miss{background:#78350f;color:#fcd34d}.t-auto{background:#0c4a6e;color:#7dd3fc}
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:9}
+  #modal .card{width:100%;max-width:560px;border-radius:16px 16px 0 0;margin:0;padding:16px}
+  #zoom{background:#0f1216;margin:8px 0}
+  .pts{display:flex;gap:8px;margin:10px 0}
+  .pts button{flex:1;padding:14px 0;font-size:20px;font-weight:800;border-radius:10px;border:1px solid var(--line);background:#2a313b;color:var(--txt)}
+  .pts button.right{background:var(--ok);color:#052e12}.pts button.wrong{background:var(--ng);color:#fff}
+  #fb{min-height:40px;font-size:14px;line-height:1.5}
+  #toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#333c;color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10}
+  .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .kpi div{background:#0f1216;border-radius:10px;padding:8px;text-align:center}
+  .kpi span{font-size:11px;color:var(--mut);display:block}
+  .kpi b{font-size:20px}
+  .verdict{font-size:22px;font-weight:800;text-align:center;padding:10px;border-radius:10px;margin-bottom:10px}
+  .pass{background:#14532d;color:#86efac}.fail{background:#7f1d1d;color:#fca5a5}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--mut);font-weight:600}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  #map{height:34px;margin:6px 0 2px}
+  .sub{font-size:12px;color:var(--mut)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>驗布機模擬器<small>ASTM D5430 四分制</small></h1>
+
+  <!-- 設定 -->
+  <section id="setup">
+    <div class="card">
+      <div class="grid">
+        <div><label>布長（碼）</label><input id="cLen" type="number" value="100" min="10" max="500"></div>
+        <div><label>幅寬（吋）</label><input id="cW" type="number" value="58" min="30" max="120"></div>
+        <div><label>不合格門檻（≥ 此分數 Fail）</label><input id="cTh" type="number" value="33" min="1" max="200"></div>
+        <div><label>判定基準</label><select id="cBasis"><option value="lin" selected>每 100 碼</option><option value="sq">每 100 平方碼</option></select></div>
+        <div><label>瑕疵量</label><select id="cDen"><option value="low">少</option><option value="mid" selected>中</option><option value="high">多（容易不合格）</option></select></div>
+      </div>
+      <label style="margin-top:12px">模式</label>
+      <div class="seg" id="cMode">
+        <button data-v="practice" class="on">練習：自己找、自己判分</button>
+        <button data-v="auto">自動：系統示範</button>
+      </div>
+    </div>
+    <div class="card">
+      <ul class="rules">
+        <li>瑕疵長度 <b>≤3"</b> 記 <b>1</b> 分，<b>3–6"</b> 記 <b>2</b> 分，<b>6–9"</b> 記 <b>3</b> 分，<b>&gt;9"</b> 記 <b>4</b> 分</li>
+        <li>破洞 <b>≤1"</b> 記 <b>2</b> 分，<b>&gt;1"</b> 記 <b>4</b> 分</li>
+        <li>每 1 碼最多記 <b>4</b> 分</li>
+        <li>每 100 碼分數 = 總分 × 100 ÷ 碼數；<b>≥ 33 分判 Fail</b></li>
+        <li>（參考）每 100 平方碼 = 總分 × 3600 ÷（碼數 × 幅寬"）</li>
+        <li>練習模式：看到瑕疵就<b>點它</b>，機台會停下讓你判分；滑過去沒點到算<b>漏檢</b></li>
+      </ul>
+    </div>
+    <button class="btn" id="go">開始驗布</button>
+  </section>
+
+  <!-- 機台 -->
+  <section id="machine" hidden>
+    <div id="stat">
+      <div>碼數<b id="sYd">0.0</b></div>
+      <div>累計分數<b id="sPts">0</b></div>
+      <div>已處理瑕疵<b id="sDef">0</b></div>
+      <div>模式<b id="sMode" style="font-size:15px;padding-top:4px">練習</b></div>
+    </div>
+    <canvas id="cv"></canvas>
+    <div id="ctrl">
+      <button class="btn sec" id="pause">暫停</button>
+      <div class="seg" id="speed"><button data-v="0.5">慢</button><button data-v="1" class="on">中</button><button data-v="2">快</button></div>
+      <button class="btn sec" id="stop">結束</button>
+    </div>
+    <div class="card" style="padding:8px 10px"><div class="sub" style="margin-bottom:4px">驗布紀錄</div><div id="log"></div></div>
+  </section>
+
+  <!-- 報告 -->
+  <section id="report" hidden></section>
+</div>
+
+<div id="modal" hidden>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <b id="mTitle" style="font-size:17px"></b><span class="sub" id="mPos"></span>
+    </div>
+    <canvas id="zoom"></canvas>
+    <div id="mInfo" style="font-size:14px"></div>
+    <div class="pts" id="mPts"><button>1</button><button>2</button><button>3</button><button>4</button></div>
+    <div id="fb"></div>
+    <button class="btn" id="mGo" hidden>繼續驗布</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cfg = { len: 100, width: 58, th: 33, basis: 'lin', den: 'mid', mode: 'practice', speed: 1 };
+
+/* ---------- 瑕疵定義 ---------- */
+const TYPES = [
+  { id: 'warp',  name: '斷經', dir: 'v', min: 1,  max: 40, w: 2,  measure: '長度' },
+  { id: 'weft',  name: '斷緯', dir: 'h', min: 2,  max: 58, w: 2,  measure: '長度' },
+  { id: 'slub',  name: '粗節', dir: 'r', min: .5, max: 4,  w: 3,  measure: '長度' },
+  { id: 'knot',  name: '結頭', dir: 'p', min: .2, max: .6, w: 2,  measure: '最大尺寸' },
+  { id: 'stain', name: '油污', dir: 'b', min: .5, max: 10, w: 2,  measure: '最大尺寸' },
+  { id: 'hole',  name: '破洞', dir: 'o', min: .2, max: 2,  w: 1,  measure: '直徑' },
+  { id: 'float', name: '跳紗', dir: 'r', min: .5, max: 6,  w: 1.5, measure: '長度' },
+  { id: 'barre', name: '色條', dir: 'f', w: .5, measure: '全幅寬' },
+];
+const DEN = { low: [6, 10], mid: [12, 20], high: [30, 45] };
+const r1 = v => Math.round(v * 10) / 10;
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+function truePts(d) {
+  if (d.type.id === 'hole') return d.size <= 1 ? 2 : 4;
+  const L = d.size; return L <= 3 ? 1 : L <= 6 ? 2 : L <= 9 ? 3 : 4;
+}
+function rangeText(d) {
+  if (d.type.id === 'hole') return `破洞 ${d.size}"（${d.size <= 1 ? '≤ 1"' : '> 1"'}）→ ${d.pts} 分`;
+  const L = d.size, rg = L <= 3 ? '≤ 3"' : L <= 6 ? '3–6"' : L <= 9 ? '6–9"' : '> 9"';
+  return `${d.size}" 落在 ${rg} → ${d.pts} 分`;
+}
+
+let defects = [];
+function generate() {
+  const [a, b] = DEN[cfg.den], n = Math.round(rnd(a, b) * cfg.len / 100);
+  const tw = TYPES.reduce((s, t) => s + t.w, 0);
+  defects = [];
+  for (let i = 0; i < n; i++) {
+    let r = Math.random() * tw, t = TYPES[0];
+    for (const x of TYPES) { r -= x.w; if (r <= 0) { t = x; break; } }
+    let size = t.id === 'barre' ? cfg.width : r1(t.min + (t.max - t.min) * Math.random() ** 2);
+    size = Math.max(size, .1);
+    if (t.id === 'weft') size = Math.min(size, cfg.width);
+    let dir = t.dir === 'r' ? (Math.random() < .5 ? 'v' : 'h') : t.dir;
+    const yIn = rnd(18, cfg.len * 36 - 18);  // 位置（吋，從布頭算）
+    let x0, x1, y0, y1;
+    if (dir === 'v') { x0 = x1 = rnd(2, cfg.width - 2); y0 = yIn; y1 = yIn + size; }
+    else if (dir === 'h' || dir === 'f') { x0 = dir === 'f' ? 0 : rnd(0, cfg.width - size); x1 = x0 + size; y0 = y1 = yIn; }
+    else { const cx = rnd(size / 2 + 1, cfg.width - size / 2 - 1), h = dir === 'b' ? size * .6 : size; x0 = cx - size / 2; x1 = cx + size / 2; y0 = yIn - h / 2; y1 = yIn + h / 2; }
+    const d = { type: t, size: r1(size), dir, x0, x1, y0, y1, seed: Math.random() * 100, status: 'pending', user: null, flash: 0 };
+    d.pts = truePts(d);
+    defects.push(d);
+  }
+  defects.sort((p, q) => p.y0 - q.y0);
+  defects.forEach((d, i) => d.no = i + 1);
+}
+
+/* ---------- 畫布 ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+let CW = 360, CH = 420, DPR = 1, M = 26, ppi = 5, yLine = 300;
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  CW = cv.clientWidth || 360;
+  CH = Math.round(Math.max(320, Math.min(innerHeight * .52, 520)));
+  cv.style.height = CH + 'px';
+  cv.width = CW * DPR; cv.height = CH * DPR;
+  ppi = (CW - M - 8) / cfg.width; yLine = Math.round(CH * .72);
+}
+addEventListener('resize', () => { if (!$('machine').hidden) resize(); });
+
+// 布紋
+const patC = document.createElement('canvas'); patC.width = patC.height = 6;
+(() => { const p = patC.getContext('2d'); p.fillStyle = '#ddd2ba'; p.fillRect(0, 0, 6, 6);
+  p.fillStyle = '#cdbf9f'; for (let i = 0; i < 6; i++) p.fillRect(i, (i * 2) % 6, 1, 2);
+  p.fillStyle = '#e6dcc6'; for (let i = 0; i < 6; i++) p.fillRect(i, (i * 2 + 3) % 6, 1, 1); })();
+let pat = null;
+
+function drawDefect(c, d, X, Y, k) {
+  const t = d.type.id;
+  c.save();
+  if (d.dir === 'v' || d.dir === 'h') {
+    const thick = t === 'slub' ? Math.max(3.5, .3 * k) : t === 'float' ? Math.max(3, .22 * k) : Math.max(1.6, .09 * k);
+    c.lineCap = 'round';
+    if (t === 'float') { c.strokeStyle = 'rgba(70,55,30,.7)'; c.lineWidth = thick + 1.5; c.beginPath(); c.moveTo(X(d.x0), Y(d.y0)); c.lineTo(X(d.x1), Y(d.y1)); c.stroke(); c.strokeStyle = '#f8f1df'; }
+    else c.strokeStyle = t === 'slub' ? 'rgba(95,75,45,.85)' : 'rgba(60,45,25,.8)';
+    c.lineWidth = thick;
+    c.beginPath(); c.moveTo(X(d.x0), Y(d.y0)); c.lineTo(X(d.x1), Y(d.y1)); c.stroke();
+  } else if (d.dir === 'f') {
+    const h = Math.max(5, .5 * k);
+    c.fillStyle = 'rgba(130,100,55,.28)'; c.fillRect(X(d.x0), Y(d.y0) - h / 2, X(d.x1) - X(d.x0), h);
+  } else {
+    const cx = X((d.x0 + d.x1) / 2), cy = Y((d.y0 + d.y1) / 2);
+    const rx = Math.max(t === 'knot' ? 2.6 : 2.5, (d.x1 - d.x0) / 2 * k), ry = Math.max(t === 'knot' ? 2.6 : 2.5, (d.y1 - d.y0) / 2 * k);
+    if (t === 'stain') {
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
+      g.addColorStop(0, 'rgba(85,65,20,.55)'); g.addColorStop(1, 'rgba(85,65,20,.08)');
+      c.fillStyle = g; c.beginPath(); c.ellipse(cx, cy, rx, ry, d.seed, 0, Math.PI * 2); c.fill();
+    } else if (t === 'hole') {
+      c.fillStyle = '#15120c'; c.beginPath();
+      for (let i = 0; i <= 16; i++) { const a = i / 16 * Math.PI * 2, j = 1 + .18 * Math.sin(d.seed + i * 2.3);
+        c.lineTo(cx + Math.cos(a) * rx * j, cy + Math.sin(a) * ry * j); }
+      c.fill();
+    } else { // knot
+      c.fillStyle = 'rgba(80,60,30,.9)'; c.beginPath(); c.arc(cx, cy, rx, 0, Math.PI * 2); c.fill();
+    }
+  }
+  c.restore();
+}
+function bboxScreen(d) {
+  const X = x => M + x * ppi, Y = y => yLine - (y - posIn) * ppi;
+  return { x0: X(d.x0), x1: X(d.x1), y0: Y(d.y1), y1: Y(d.y0) };
+}
+
+let posIn = 0, running = false, paused = false, autoHold = 0, curDef = null, lastT = 0, ended = false, falseAlarm = 0;
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // 機台
+  ctx.fillStyle = '#2b2f36'; ctx.fillRect(0, 0, CW, CH);
+  const L = cfg.len * 36, fx = M, fw = cfg.width * ppi;
+  const Y = y => yLine - (y - posIn) * ppi, X = x => M + x * ppi;
+  const top = Math.max(0, Y(L)), bot = Math.min(CH, Y(0));
+  if (bot > top) {
+    if (!pat) pat = ctx.createPattern(patC, 'repeat');
+    ctx.save(); ctx.beginPath(); ctx.rect(fx, top, fw, bot - top); ctx.clip();
+    const off = (posIn * ppi) % 6; ctx.translate(0, off);
+    ctx.fillStyle = pat; ctx.fillRect(fx, top - 8, fw, bot - top + 16);
+    ctx.restore();
+    // 布邊
+    ctx.fillStyle = '#b9ab8c'; ctx.fillRect(fx, top, 3, bot - top); ctx.fillRect(fx + fw - 3, top, 3, bot - top);
+    // 瑕疵
+    for (const d of defects) {
+      const b = bboxScreen(d);
+      if (b.y1 < -20 || b.y0 > CH + 20) continue;
+      ctx.save(); ctx.beginPath(); ctx.rect(fx, top, fw, bot - top); ctx.clip();
+      drawDefect(ctx, d, X, Y, ppi); ctx.restore();
+      if (d.status === 'found' || d.status === 'auto') { // 黃色瑕疵貼紙
+        const sx = Math.min(b.x1 + 6, CW - 30), sy = (b.y0 + b.y1) / 2;
+        ctx.fillStyle = d.status === 'auto' || d.user === d.pts ? '#facc15' : '#fb7185';
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 8, sy - 8); ctx.lineTo(sx + 24, sy - 8); ctx.lineTo(sx + 24, sy + 8); ctx.lineTo(sx + 8, sy + 8); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#111'; ctx.font = '700 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(d.status === 'auto' ? d.pts : d.user, sx + 16, sy + 1);
+      }
+      if (d.flash > 0) {
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+        ctx.strokeRect(b.x0 - 8, b.y0 - 8, b.x1 - b.x0 + 16, b.y1 - b.y0 + 16); ctx.setLineDash([]);
+        const txt = `${d.type.name} ${d.size}" → ${d.pts} 分`;
+        ctx.font = '700 13px system-ui'; const tw = ctx.measureText(txt).width + 12;
+        const lx = Math.min(Math.max(b.x0, M), CW - tw - 4), ly = Math.max(b.y0 - 30, 4);
+        ctx.fillStyle = 'rgba(8,47,73,.92)'; ctx.fillRect(lx, ly, tw, 20);
+        ctx.fillStyle = '#e0f2fe'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(txt, lx + 6, ly + 10);
+      }
+    }
+  }
+  // 碼數刻度
+  ctx.fillStyle = '#9aa3af'; ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const yd0 = Math.floor((posIn - (CH - yLine) / ppi) / 36), yd1 = Math.ceil((posIn + yLine / ppi) / 36);
+  for (let yd = Math.max(0, yd0); yd <= Math.min(cfg.len, yd1); yd++) {
+    const y = Y(yd * 36); ctx.fillRect(M - 6, y, 5, 1); ctx.fillText(yd, M - 8, y);
+  }
+  // 檢驗線（燈箱）
+  const g = ctx.createLinearGradient(0, yLine - 30, 0, yLine + 30);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(255,255,255,.12)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(M, yLine - 30, fw, 60);
+  ctx.fillStyle = '#ef4444'; ctx.fillRect(M - 4, yLine - 1, fw + 8, 2);
+  ctx.fillStyle = '#fca5a5'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'left'; ctx.fillText('檢驗線', M + 4, yLine + 9);
+  // 上下滾輪
+  for (const [y, up] of [[0, 1], [CH, -1]]) {
+    const rg = ctx.createLinearGradient(0, y, 0, y + up * 14);
+    rg.addColorStop(0, '#0b0d10'); rg.addColorStop(1, 'rgba(11,13,16,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, up > 0 ? 0 : CH - 14, CW, 14);
+  }
+}
+
+/* ---------- 主迴圈 ---------- */
+function tick(t) {
+  const dt = Math.min(.05, (t - lastT) / 1000 || 0); lastT = t;
+  if (running) {
+    defects.forEach(d => d.flash = Math.max(0, d.flash - dt));
+    if (autoHold > 0) autoHold -= dt;
+    else if (!paused && !curDef) {
+      posIn += cfg.speed * 36 * dt;
+      if (cfg.mode === 'auto') {
+        for (const d of defects) if (d.status === 'pending' && posIn >= (d.y0 + d.y1) / 2) {
+          d.status = 'auto'; d.flash = 1.6 / Math.sqrt(cfg.speed); autoHold = d.flash;
+          posIn = (d.y0 + d.y1) / 2; addLog(d); break;
+        }
+      } else {
+        for (const d of defects) if (d.status === 'pending' && bboxScreen(d).y0 > CH + 6) { d.status = 'missed'; addLog(d); }
+      }
+      if (posIn >= cfg.len * 36 + (CH - yLine) / ppi + 6) finish();
+    }
+    updateStat();
+  }
+  if (!$('machine').hidden) draw();
+  requestAnimationFrame(tick);
+}
+
+function updateStat() {
+  $('sYd').textContent = Math.min(cfg.len, Math.max(0, posIn / 36)).toFixed(1);
+  const done = defects.filter(d => d.status !== 'pending');
+  const pts = cfg.mode === 'auto' ? done.reduce((s, d) => s + d.pts, 0) : done.reduce((s, d) => s + (d.user || 0), 0);
+  $('sPts').textContent = pts;
+  $('sDef').textContent = done.length + (cfg.mode === 'auto' ? ' / ' + defects.length : '');
+}
+
+function addLog(d) {
+  const el = document.createElement('div');
+  const yd = (d.y0 / 36).toFixed(1) + ' 碼';
+  let tag;
+  if (d.status === 'auto') tag = `<span class="tag t-auto">${d.pts} 分</span>`;
+  else if (d.status === 'missed') tag = `<span class="tag t-miss">漏檢</span>（應記 ${d.pts} 分）`;
+  else tag = d.user === d.pts ? `<span class="tag t-ok">${d.user} 分 ✔</span>` : `<span class="tag t-ng">${d.user} 分 ✘</span> 應 ${d.pts}`;
+  el.innerHTML = `<span class="y">${yd}</span><span>${d.type.name} ${d.size}"　${tag}</span>`;
+  $('log').prepend(el);
+}
+
+/* ---------- 點擊找瑕疵 ---------- */
+cv.addEventListener('pointerdown', e => {
+  if (!running || cfg.mode !== 'practice' || curDef) return;
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = 1e9;
+  for (const d of defects) {
+    if (d.status !== 'pending') continue;
+    const b = bboxScreen(d), pad = 18;
+    if (x >= b.x0 - pad && x <= b.x1 + pad && y >= b.y0 - pad && y <= b.y1 + pad) {
+      const dist = Math.hypot(x - Math.max(b.x0, Math.min(x, b.x1)), y - Math.max(b.y0, Math.min(y, b.y1)));
+      if (dist < bd) { bd = dist; best = d; }
+    }
+  }
+  if (best) openModal(best);
+  else { falseAlarm++; toast('這裡沒有瑕疵（誤報 +1）'); }
+});
+
+const zc = $('zoom'), zctx = zc.getContext('2d');
+function openModal(d) {
+  curDef = d;
+  $('mTitle').textContent = `發現瑕疵：${d.type.name}`;
+  $('mPos').textContent = `第 ${(d.y0 / 36).toFixed(1)} 碼`;
+  const dirTxt = d.dir === 'v' ? '經向（直向）' : d.dir === 'h' ? '緯向（橫向）' : d.dir === 'f' ? '全幅' : '';
+  $('mInfo').innerHTML = `用尺量測${d.type.measure}：<b style="font-size:18px">${d.size}"</b>　${dirTxt}<br><span class="sub">請判定應記幾分：</span>`;
+  $('fb').innerHTML = ''; $('mGo').hidden = true;
+  [...$('mPts').children].forEach(b => { b.className = ''; b.disabled = false; });
+  $('modal').hidden = false;
+  // 放大圖
+  const w = zc.clientWidth || 300, h = 150, dpr = window.devicePixelRatio || 1;
+  zc.style.height = h + 'px'; zc.width = w * dpr; zc.height = h * dpr;
+  zctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const bw = d.x1 - d.x0, bh = d.y1 - d.y0;
+  const k = Math.min((w - 40) / Math.max(bw, .5), (h - 50) / Math.max(bh, .5), 26);
+  const cx = (d.x0 + d.x1) / 2, cy = (d.y0 + d.y1) / 2;
+  const X = x => w / 2 + (x - cx) * k, Y = y => h / 2 - 8 - (y - cy) * k;
+  zctx.fillStyle = zctx.createPattern(patC, 'repeat'); zctx.save(); zctx.scale(2, 2); zctx.fillRect(0, 0, w, h); zctx.restore();
+  drawDefect(zctx, d, X, Y, k);
+  // 尺
+  const rx0 = d.dir === 'v' ? X(d.x0) + 14 : X(d.x0), ry = h - 16;
+  zctx.strokeStyle = '#facc15'; zctx.fillStyle = '#facc15'; zctx.lineWidth = 2;
+  if (d.dir === 'v') {
+    zctx.beginPath(); zctx.moveTo(rx0, Y(d.y0)); zctx.lineTo(rx0, Y(d.y1)); zctx.stroke();
+    zctx.font = '700 12px system-ui'; zctx.textAlign = 'left'; zctx.fillText(d.size + '"', rx0 + 5, (Y(d.y0) + Y(d.y1)) / 2);
+  } else {
+    zctx.beginPath(); zctx.moveTo(X(d.x0), ry); zctx.lineTo(X(d.x1), ry); zctx.moveTo(X(d.x0), ry - 5); zctx.lineTo(X(d.x0), ry + 5); zctx.moveTo(X(d.x1), ry - 5); zctx.lineTo(X(d.x1), ry + 5); zctx.stroke();
+    zctx.font = '700 12px system-ui'; zctx.textAlign = 'center'; zctx.fillText(d.size + '"', (X(d.x0) + X(d.x1)) / 2, ry - 8);
+  }
+}
+[...$('mPts').children].forEach((b, i) => b.addEventListener('click', () => {
+  const d = curDef; if (!d || d.user) return;
+  d.user = i + 1; d.status = 'found';
+  [...$('mPts').children].forEach((x, j) => { x.disabled = true; if (j + 1 === d.pts) x.className = 'right'; else if (j === i) x.className = 'wrong'; });
+  $('fb').innerHTML = (d.user === d.pts ? '<b style="color:#86efac">✔ 正確！</b> ' : `<b style="color:#fca5a5">✘ 應記 ${d.pts} 分。</b> `) + rangeText(d);
+  $('mGo').hidden = false; addLog(d);
+}));
+$('mGo').addEventListener('click', () => { $('modal').hidden = true; curDef = null; lastT = performance.now(); });
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.opacity = 0, 1300); }
+
+/* ---------- 流程 ---------- */
+function seg(id, key, cb) {
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    [...$(id).children].forEach(x => x.classList.toggle('on', x === b));
+    cfg[key] = key === 'speed' ? +b.dataset.v : b.dataset.v; cb && cb();
+  });
+}
+seg('cMode', 'mode'); seg('speed', 'speed');
+
+function start() {
+  cfg.len = Math.max(10, Math.min(500, +$('cLen').value || 100));
+  cfg.width = Math.max(30, Math.min(120, +$('cW').value || 58));
+  cfg.th = +$('cTh').value || 33; cfg.basis = $('cBasis').value; cfg.den = $('cDen').value;
+  generate();
+  $('setup').hidden = true; $('report').hidden = true; $('machine').hidden = false;
+  $('log').innerHTML = ''; $('sMode').textContent = cfg.mode === 'auto' ? '自動' : '練習';
+  resize();
+  posIn = -(CH - yLine) / ppi * 0 - 6; running = true; paused = false; ended = false; falseAlarm = 0; curDef = null; autoHold = 0;
+  $('pause').textContent = '暫停';
+  lastT = performance.now(); scrollTo(0, 0);
+}
+$('go').addEventListener('click', start);
+$('pause').addEventListener('click', () => { if (!running) return; paused = !paused; $('pause').textContent = paused ? '繼續' : '暫停'; lastT = performance.now(); });
+$('stop').addEventListener('click', () => { if (running) finish(true); });
+
+function capped(getPts) {
+  const by = {};
+  defects.forEach(d => { const p = getPts(d); if (!p) return; const yd = Math.floor(d.y0 / 36); by[yd] = (by[yd] || 0) + p; });
+  let raw = 0, cap = 0; const capYards = [];
+  for (const k in by) { raw += by[k]; cap += Math.min(4, by[k]); if (by[k] > 4) capYards.push(`第 ${+k + 1} 碼（${by[k]}→4）`); }
+  return { raw, cap, capYards };
+}
+
+function finish(early) {
+  running = false; ended = true;
+  const inspectedYd = early ? Math.max(1, Math.min(cfg.len, posIn / 36)) : cfg.len;
+  if (early) defects.forEach(d => { if (d.status === 'pending' && d.y0 / 36 <= inspectedYd && cfg.mode === 'practice') d.status = 'missed'; });
+  const inRange = defects.filter(d => d.y0 / 36 <= inspectedYd);
+  const all = d => inRange.includes(d) ? d.pts : 0;
+  const T = capped(all);
+  const sq = T.cap * 3600 / (inspectedYd * cfg.width), lin = T.cap * 100 / inspectedYd;
+  const per = cfg.basis === 'lin' ? lin : sq, unit = cfg.basis === 'lin' ? '分/100 碼' : '分/100 平方碼';
+  const pass = per < cfg.th;
+  let html = `<div class="card"><h2 style="margin:0 0 10px;font-size:18px">驗布報告</h2>
+    <div class="sub" style="margin-bottom:8px">長度 ${r1(inspectedYd)} 碼${early ? `（提前結束，原 ${cfg.len} 碼）` : ''}　幅寬 ${cfg.width}"　≥ ${cfg.th} ${unit} 判 Fail</div>
+    <div class="verdict ${pass ? 'pass' : 'fail'}">${pass ? '合格 PASS' : '不合格 FAIL'}</div>
+    <div class="kpi"><div><span>瑕疵數</span><b>${inRange.length}</b></div><div><span>總分（每碼封頂後）</span><b>${T.cap}</b></div><div><span>${unit}</span><b>${per.toFixed(1)}</b></div></div>
+    <div class="sub">每 100 碼：${T.cap} × 100 ÷ ${r1(inspectedYd)} = ${lin.toFixed(1)}<br>每 100 平方碼：${T.cap} × 3600 ÷（${r1(inspectedYd)} × ${cfg.width}）= ${sq.toFixed(1)}${T.capYards.length ? `<br>每碼 4 分封頂：${T.capYards.join('、')}（原始 ${T.raw} 分）` : ''}</div>`;
+  if (cfg.mode === 'practice') {
+    const found = inRange.filter(d => d.status === 'found'), right = found.filter(d => d.user === d.pts), missed = inRange.filter(d => d.status === 'missed');
+    const U = capped(d => d.status === 'found' && inRange.includes(d) ? d.user : 0);
+    const uper = cfg.basis === 'lin' ? U.cap * 100 / inspectedYd : U.cap * 3600 / (inspectedYd * cfg.width), upass = uper < cfg.th;
+    html += `<h3 style="font-size:15px;margin:14px 0 8px">你的驗布成績</h3>
+    <div class="kpi"><div><span>檢出率</span><b>${inRange.length ? Math.round(found.length / inRange.length * 100) : 100}%</b></div><div><span>判分正確</span><b>${right.length}/${found.length}</b></div><div><span>漏檢 / 誤報</span><b>${missed.length} / ${falseAlarm}</b></div></div>
+    <div class="sub">你判定的分數：${U.cap} 分 → ${uper.toFixed(1)} ${unit} → <b style="color:${upass ? '#86efac' : '#fca5a5'}">${upass ? '合格' : '不合格'}</b>
+    ${upass !== pass ? '<br><b style="color:#fcd34d">⚠ 你的判定結果和實際不同</b>' : '<br>判定結果與實際一致'}</div>`;
+  }
+  html += `<div class="sub" style="margin-top:12px">瑕疵分布（0 → ${r1(inspectedYd)} 碼）</div><canvas id="map"></canvas>
+    <div style="overflow-x:auto"><table><tr><th>#</th><th>碼</th><th>瑕疵</th><th>尺寸</th><th>應記</th>${cfg.mode === 'practice' ? '<th>你記</th>' : ''}</tr>`;
+  inRange.forEach(d => {
+    let you = '';
+    if (cfg.mode === 'practice') you = d.status === 'missed' ? '<td><span class="tag t-miss">漏檢</span></td>' : `<td><span class="tag ${d.user === d.pts ? 't-ok' : 't-ng'}">${d.user}</span></td>`;
+    html += `<tr><td>${d.no}</td><td class="n">${(d.y0 / 36).toFixed(1)}</td><td>${d.type.name}</td><td class="n">${d.size}"</td><td class="n">${d.pts}</td>${you}</tr>`;
+  });
+  html += `</table></div></div>
+    <div class="row"><button class="btn" id="again">再驗一捲</button><button class="btn sec" id="back">改設定</button></div>
+    <button class="btn sec" id="copy" style="margin-top:8px">複製報告文字</button>`;
+  $('report').innerHTML = html;
+  $('machine').hidden = true; $('report').hidden = false; scrollTo(0, 0);
+  // 分布圖
+  const mc = $('map'), w = mc.clientWidth, h = 34, dpr = window.devicePixelRatio || 1;
+  mc.width = w * dpr; mc.height = h * dpr; const m = mc.getContext('2d'); m.setTransform(dpr, 0, 0, dpr, 0, 0);
+  m.fillStyle = '#ddd2ba'; m.fillRect(0, 8, w, 18);
+  inRange.forEach(d => {
+    const x = d.y0 / 36 / inspectedYd * w;
+    m.fillStyle = d.status === 'missed' ? '#f59e0b' : ['#64748b', '#64748b', '#0ea5e9', '#a855f7', '#ef4444'][d.pts];
+    m.fillRect(x - 1, 4 + (4 - d.pts) * 3, 2.5, 26 - (4 - d.pts) * 3);
+  });
+  $('again').onclick = start;
+  $('back').onclick = () => { $('report').hidden = true; $('setup').hidden = false; };
+  $('copy').onclick = async () => {
+    const lines = [`驗布報告　${r1(inspectedYd)} 碼 × ${cfg.width}"`, `總分 ${T.cap}　${per.toFixed(1)} ${unit}　${pass ? 'PASS' : 'FAIL'}（≥ ${cfg.th} 判 Fail）`, '#\t碼\t瑕疵\t尺寸\t分數',
+      ...inRange.map(d => `${d.no}\t${(d.y0 / 36).toFixed(1)}\t${d.type.name}\t${d.size}"\t${d.pts}`)];
+    try { await navigator.clipboard.writeText(lines.join('\n')); toast('已複製'); } catch (e) { toast('無法複製'); }
+  };
+}
+
+window.__insp = { cfg, get defects() { return defects; }, get posIn() { return posIn; }, start, finish, openModal };
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
